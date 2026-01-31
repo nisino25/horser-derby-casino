@@ -844,9 +844,14 @@
 
 <style>
   #app {
+    overflow: hidden;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+
     font-family: Avenir, Helvetica, Arial, sans-serif;
     padding: .5rem;
-    min-height: 100vh;
+    /* min-height: 100vh; */
 
     background-color: #4b5563;
     color: #f9fafb; /* Tailwind gray-50 */
