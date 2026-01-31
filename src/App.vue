@@ -843,6 +843,13 @@
 </script>
 
 <style>
+  * {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+
+    padding: 0;
+    margin: 0;
+  }
   #app {
     overflow: hidden;
     height: 100%;
@@ -854,6 +861,8 @@
     /* min-height: 100vh; */
 
     background-color: #4b5563;
+    background: #4b5563;
+
     color: #f9fafb; /* Tailwind gray-50 */
     /* -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
