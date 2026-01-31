@@ -198,7 +198,7 @@
           <div class="relative grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-2 items-center overflow-hidden mt-4">
             <div class="col-span-2">
               <div class="grid grid-cols-[1fr_1fr_1fr] gap-1 w-[80%]">
-                <template v-for="(bet, betIndex) in myPlayer.bets" :key="betIndex">
+                <template v-for="(bet, betIndex) in myPlayer?.bets" :key="betIndex">
                     <div 
                         class="w-7 aspect-square flex items-center justify-center rounded-full text-black font-bold shadow-md m-1"
                         :class="[
@@ -851,7 +851,7 @@
     padding: 0;
     margin: 0;
   }
-  #app {
+  html,body {
     overflow: hidden;
     height: 100%;
     margin: 0;
