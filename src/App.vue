@@ -370,7 +370,6 @@
     },
     mounted(){
       console.clear();
-      this.horseData = this.initHorseData();
 
       const width = window.innerWidth
 
@@ -382,11 +381,13 @@
           this.currentDevice = 'mobile'
       }
 
-      this.specialOrders = this.initSpecialOrders();
+      // this.horseData = this.initHorseData();
 
-      this.players = this.initPlayers();
+      // this.specialOrders = this.initSpecialOrders();
 
-      this.randomBetAll();
+      // this.players = this.initPlayers();
+
+      // this.randomBetAll();
 
     },
     methods: {
