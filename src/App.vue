@@ -46,7 +46,10 @@
 
           <template v-if="roomOption && roomCode">
             <h2 v-if="isHost">You are host</h2>
-            <h2 v-else>Welcome {{ username }}!</h2>
+            Game Speed
+            <input type="number" v-model="frequency" class="mb-4">
+            <hr>
+            <h2 v-if="!isHost">Welcome {{ username }}!</h2>
             <p>Room code: <strong class="font-size: 2.5em; color: crimson; margin-right: 5px; font-weight: bold;">{{ roomCode }}</strong></p>
             <hr>
             <template v-for="(player, index) in players" :key="index">
@@ -94,7 +97,7 @@
                 }"
               >
                 <i :class="['fa-solid', 'fa-horse', `text-${extraInfo[horseIndex]?.color}-200`]"></i>
-                <span class="absolute z-10 top-1/4 left-1/3 -translate-x-1/2  text-sm font-bold text-black">
+                <span class="absolute z-10 left-1/3 -translate-x-1/2  text-sm font-bold text-black" style="top: 25%; text-shadow: 0 0 4px rgba(255, 255, 255, 0.8),0 0 8px rgba(255, 255, 255, 0.6);">
                   {{ extraInfo[horseIndex]?.diceText}}
                 </span>
               </div>
@@ -105,7 +108,7 @@
     
             <template v-if="winner && currentRound == totalRound">
               <strong class="mr-4">
-                Game is over. {{ totalWinner.name }} ({{ totalWinner.balance }}) won the entire game!
+                Game is over. {{ totalWinner?.name }} ({{ totalWinner?.balance }}点) won the entire game!
               </strong>
               <button
                   @click="confirmNewRound"
@@ -116,7 +119,7 @@
                         transition-all duration-200"
               >
                   <i class="fa-solid fa-play text-sm group-hover:translate-x-0.5 transition-transform"></i>
-                  <span class="whitespace-nowrap">Start New Round</span>
+                  <span class="whitespace-nowrap">Start New Game</span>
               </button>
     
             </template>
@@ -180,7 +183,10 @@
           <div class="top-row">
             <div class="relative tiles-container grid grid-cols-[repeat(5,minmax(0,1fr))] gap-2 overflow-hidden">
               <template v-for="(order, index) in specialOrders" :key="index">
-                <div class="bg-amber-700 border border-amber-200 aspect-[16/9] p-1 relative" @click="placeSpecialBet(order)">
+                <div 
+                  class="bg-amber-700 border border-amber-200 aspect-[16/9] p-1 relative"
+                  @click="placeSpecialBet(order)"
+                  >
                   <div class="center">
                     <div class="flex justify-between w-full text-sm">
                       <div class="w-full text-center">
@@ -211,8 +217,6 @@
                   >
                     {{ order?.placedBet }}
                   </div>
-                  <!-- {{ order }} -->
-                  
                 </div>
               </template>
             </div>
@@ -227,8 +231,14 @@
               <template v-for="(info, index) in extraInfo" :key="index">
                 <template v-for="(bet, betIndex) in info.betList" :key="betIndex">
                   <div 
-                    class="border aspect-square relative bg-green-700 px-1" 
+                    class="border aspect-square relative px-1" 
                     style="text-wrap: nowrap;"
+                    :class="{
+                      'bg-gray-500/60': !winner && (hasCrossedRedLine || bet.placedBet),
+                      'bg-green-700': !winner && !hasCrossedRedLine && !bet.placeBet,
+                      'bg-yellow-400': winner && bet.isSuccess,
+                    }"
+
                     @click="placeBet(myPlayerIndex, bet)"
                     >
                     <strong class="text-lg"><small>x</small>{{ bet.odds }}</strong>
@@ -300,13 +310,16 @@
                 <div class="playerInfo" :id="'player-'+player.name" >
                   <div class="player-box" :class="player.name == username ? 'border-2 border-yellow-400 shadow-[0_0_10px_rgba(255,215,0,0.7)]' : 'border border-gray-300'">
                       <div class="name-container text-black py-1" :class="player.coinColor">
-                          <p>{{ player.name }} : {{ player.balance }}</p>
+                          <p>{{ player.name }} : <strong>{{ player.balance }}</strong></p>
                       </div>
                       <div class="player-image-container relative">
                           <div class="temp-image">
                               <div v-html="regenerate(player.randomString)"></div>
                           </div>
                       </div>
+                  </div>
+                  <div class="w-full border text-black" :class="player.coinColor">
+                    <span style="font-size: 0.75rem;">残ベット：{{ player.bets.length }}枚</span>
                   </div>
                 </div>
               </template>
@@ -383,7 +396,10 @@
         isCheckingNow: false,
         gameMessage: "",
         isHost: false,
+
+        frequency: 25,
       }
+      
     },
     mounted(){
       console.clear();
@@ -567,7 +583,6 @@
         // if (!this.selectedBetIndex ) return
         if (this.myPlayer.bets.length === 0) return;
 
-          
         let betValue;
 
         betValue = this.myPlayer.bets.splice(this.selectedBetIndex, 1)[0];
@@ -616,7 +631,7 @@
           this.rollDice()
 
           // const frequency = 250
-          const frequency = 3000
+          // this.frequency = 3000
           
 
           this.autoInterval = setInterval(() => {
@@ -627,7 +642,7 @@
               }
 
               this.rollDice()
-          }, frequency)
+          }, this.frequency)
       },
       stopAuto() {
           if (this.autoInterval) {
@@ -671,7 +686,7 @@
               info.betList.forEach((bet, betIndex) => {
                   if (!bet.placedBet) return
 
-                  const player = this.players[bet.playerIndex]
+                  const player = this.players[bet.playerIndex] || {balance: 0}
                   const amount = bet.placedBet
 
                   const win = this.isWinningBet(betIndex, horse?.rank)
@@ -679,16 +694,13 @@
                   if (!player.balance) player.score = 0
 
                   if (win) {
-                      player.balance += amount * bet.odds
+                    bet.isSuccess = true;
+                      player.balance += amount * bet.odds;
                   } else {
-                      player.balance -= bet.penalty
+                    bet.isSuccess = false;
+                      player.balance -= bet.penalty;
                   }
               })
-
-              
-
-
-              
           })
 
           this.specialOrders.forEach(order => {
@@ -708,6 +720,7 @@
               // if (!player.balance) player.balance = 0
 
               if (isSuccess) {
+                order.isSuccess = true
                 player.balance += amount * order.odds
               } else {
                 player.balance -= order.penalty
@@ -765,8 +778,8 @@
                 isSuccess = horse.rank >= 5
             }
 
-            console.log(bet.name)
             if (isSuccess) {
+              bet.isSuccess = true;
                 player.balance += amount * bet.odds
             } else {
                 player.balance -= bet.penalty
@@ -775,9 +788,9 @@
 
           })
 
-          this.players.forEach(player => {
-            if(player.balance < 0) player.balance = 0
-          })
+          // this.players.forEach(player => {
+          //   if(player.balance < 0) player.balance = 0
+          // })
 
           this.updateBetsAndScore();
       },
@@ -791,9 +804,10 @@
 
         this.extraInfo.forEach((info) => {
             info.betList.forEach(bet => {
-                bet.placedBet = null;
-                bet.color = null;
-                bet.playerIndex = null;
+              bet.placedBet = null;
+              bet.color = null;
+              bet.playerIndex = null;
+              bet.isSuccess = false;
             })
         })
 
@@ -801,12 +815,14 @@
           specialBet.placedBet = null;
           specialBet.color = null;
           specialBet.playerIndex = null;
+          specialBet.isSuccess = false;
         })
 
         this.topBets.forEach((bet) => {
           bet.placedBet = null;
           bet.color = null;
           bet.playerIndex = null;
+          bet.isSuccess = false;
         })
 
         this.players.forEach(player => {
@@ -1018,7 +1034,7 @@
           this.extraInfo = this.generalData?.extraInfo
           this.specialOrders = this.generalData?.specialOrders
           this.topBets = this.generalData?.topBets
-
+          
           // this.horseData = this.generalData?.horseData
           this.hasCrossedRedLine = this.generalData?.hasCrossedRedLine
           this.winner = this.generalData?.winner
@@ -1097,6 +1113,7 @@
           specialOrders: this.specialOrders,
           topBets: this.topBets,
           hasCrossedRedLine: this.hasCrossedRedLine,
+          winner: false,
         })
       },
       updateHorse(){
@@ -1131,10 +1148,6 @@
 
         return randomName;
       },
-    
-
-
-
       
     },
     computed: {
@@ -1143,7 +1156,7 @@
 
             // find the player with the highest balance
             return this.players.reduce((maxPlayer, player) => {
-                return (player.balance > (maxPlayer?.balance || 0)) ? player : maxPlayer
+              return (player.balance > (maxPlayer?.balance || 0)) ? player : maxPlayer
             }, null)
         },
 
