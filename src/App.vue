@@ -1,346 +1,343 @@
 <template>
   <div class="flex w-full justify-around">
 
-    <template v-if="currentDevice == 'tablet' || currentDevice == 'pc'">
-      <div class="main-tablet max-w-[1024px]">
-        <div class="relative tiles-container grid grid-cols-[repeat(17,minmax(0,1fr))] gap-4 overflow-hidden">
-          <template v-for="(tile, index) in baseTiles" :key="index">
-            <template v-if="tile.col === 0">
-              <div 
-                class="flex justify-center items-center border border-4 border-black rounded-md font-bold text-black"
-                :class="'bg-' + extraInfo[tile.row]?.color + '-300'"
+
+    <div v-if="currentPage === 'before'">
+        <div class="bg-white p-5 rounded-lg shadow-md w-[85%] max-w-[400px] m-auto absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-black">
+
+          <div v-if="!roomOption">
+            <button @click="createARoom()" class="bg-[#3581B8] text-white  block w-1/2 mx-auto p-[10px] rounded">Create a room</button>
+            <hr class="my-3">
+            <button @click="roomOption = 'join'; retriveCode();" class="bg-[#13563B] text-white block w-1/2 mx-auto p-[10px] rounded">Join a room</button>
+          </div>
+          <template v-if="roomOption && !roomCode">
+            <h2>Type your name</h2>
+              <div class="flex items-center mb-3 border border-gray-300 rounded overflow-hidden">
+              <input
+                type="text"
+                class="flex-grow p-2 outline-none"
+                v-model="username"
+                placeholder="Enter your username"
               >
-                {{ extraInfo[tile.row]?.text}}
+              <button
+                class="p-2 text-gray-600 hover:text-gray-900"
+                @click="username = getRandomName()"
+              >
+                <i class="fa-solid fa-shuffle"></i>
+              </button>
+            </div>
+
+              <div class="w-[95%] mx-auto grid grid-cols-5 gap-3 justify-between mb-5">
+                <div v-for="(avatar, index) in avatars" :key="index" @click="randomString = avatar.randomString" v-html="avatar.avatar"  :style="{ opacity:  randomString !== avatar.randomString ? '0.6' : '1' }"></div>
+
+                <div class="text-3xl text-gray-600 flex justify-center items-center text-center" @click="generateAvatars('female')">
+                  <i class="fas fa-sync"></i>
+                </div>
               </div>
-              <div class="flex justify-center items-center border border-2 text-sm">
-                
+              <div class="flex items-center mb-2" v-if="roomOption === 'join'">
+                <input type="number" v-model="tempRoomcode" placeholder="Type room code" class="flex-grow p-2 border border-gray-300 rounded">
+              </div>
+              <!-- <button v-if="readyToPlay" @click="randomName()" class="add-button">ランダム</button> -->
+              <button @click="roomOption = null" class="bg-[#B83A4B] text-white block mx-auto p-[10px] rounded w-1/2 mb-2">Back</button>
+              <button @click="username = getRandomName();" class="bg-[black] text-white block mx-auto p-[10px] rounded mb-2 w-1/2">Random Name</button>
+              <!-- <button v-if="readyToPlay && roomOption === 'create'" @click="createARoom()" class="bg-[#3581B8] text-white  block  mx-auto p-[10px] rounded w-1/2 mb-2">Create</button> -->
+              <button v-if="tempRoomcode >= 10000 && tempRoomcode <= 99999 && readyToPlay && roomOption === 'join'" @click="joinARoom()" class="bg-[#3581B8] text-white  block mx-auto p-[10px] rounded w-1/2">Join</button>
+          </template>
+
+          <template v-if="roomOption && roomCode">
+            <h2 v-if="isHost">You are host</h2>
+            <h2 v-else>Welcome {{ username }}!</h2>
+            <p>Room code: <strong class="font-size: 2.5em; color: crimson; margin-right: 5px; font-weight: bold;">{{ roomCode }}</strong></p>
+            <hr>
+            <template v-for="(player, index) in players" :key="index">
+              <div class="player-list flex items-center gap-2 my-2">
+                <span>{{index +1}}.</span>
+                <div v-html="regenerate(player.randomString)"></div>
+                <p>{{ player.name }}</p>
               </div>
             </template>
-            <div class="border-2 aspect-square relative" :class="tile.col === 8 ? 'red-line-after': ''" ></div>
-            <div v-if="tile.col === 13" class="border-2 finish-line bg-green-500"></div>
+            <button v-if="players?.length >= 2 && isHost"  @click="closeTheRoom()" class="bg-[#3581B8] text-white  block  mx-auto p-[10px] rounded w-1/2 mb-2">Close room</button>
           </template>
-    
-    
-          <!-- Pieces layer -->
-          <div class="absolute top-0 left-[calc(4.5%+1rem)] w-[calc(88%+1rem)] h-[calc(100%+1rem)] pointer-events-none"> 
-            <div
-              v-for="(horse, horseIndex) in horseData"
-              :key="horse.horseIndex"
-              class="piece absolute text-[1.75rem] transition-all duration-300"
-              :style="{
-                top: `${horseIndex * (100 / 9) - .25}%`,
-                left: `${horse.position * 6.67 + .4}%`
-              }"
-            >
-              <i :class="['fa-solid', 'fa-horse', `text-${extraInfo[horseIndex]?.color}-200`]"></i>
-              <span class="absolute z-10 top-1/4 left-1/3 -translate-x-1/2  text-sm font-bold text-black">
-                {{ extraInfo[horseIndex]?.diceText}}
-              </span>
-            </div>
-          </div>
-        </div>
-    
-        <div class="p-4">
-
-          <template v-if="winner && currentRound == totalRound">
-            <strong class="mr-4">
-              Game is over. {{ totalWinner.name }} ({{ totalWinner.balance }}) won the entire game!
-            </strong>
-            <button
-                @click="confirmNewRound"
-                class="group flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600
-                      hover:from-green-600 hover:to-emerald-700
-                      text-white font-semibold px-5 py-2.5 rounded-xl
-                      shadow-lg hover:shadow-xl active:scale-95
-                      transition-all duration-200"
-            >
-                <i class="fa-solid fa-play text-sm group-hover:translate-x-0.5 transition-transform"></i>
-                <span class="whitespace-nowrap">Start New Round</span>
-            </button>
-
-          </template>
-          <button
-              v-else-if="winner"
-              @click="startNewRound()"
-              class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded mr-3 items-center gap-2"
-          >
-              <i class="fa-solid fa-play"></i>
-              Start New Round
-          </button>
-          <button
-              v-else-if="!autoInterval"
-              @click="startAuto"
-              class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded mr-3 items-center gap-2"
-          >
-              <i class="fa-solid fa-play"></i>
-              Start
-          </button>
-
-          <button
-              v-else
-              @click="stopAuto"
-              class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded mr-3 items-center gap-2"
-              :disabled="!autoInterval"
-          >
-              <i class="fa-solid fa-stop"></i>
-              Stop
-          </button>
-
-          <button v-if="!winner" @click="rollDice" class="bg-blue-500 text-white px-4 py-2 rounded">Roll Dice</button>
-
-          <div>
-            <strong
-                v-if="winner"
-                class="block mt-4 px-6 py-4 rounded-xl
-                      bg-yellow-100 text-yellow-800 border border-yellow-300
-                      text-lg font-bold shadow-lg text-center"
-            >
-                🏆 Winner: {{ extraInfo[winner.horseIndex]?.diceText }} 🏆
-            </strong>
-
-            <strong
-              v-else-if="hasCrossedRedLine"
-              class="block mt-4 px-4 py-2 rounded-lg
-                    bg-red-50 text-red-700 border border-red-300
-                    text-sm font-semibold shadow-sm"
-            >
-              赤線を越えた馬が3頭出たため、ベット終了です。
-            </strong>
-          </div>
-          <p class="mt-4 text-3xl">
-            <strong>{{ currentRound }} / {{ totalRound }} Round</strong> - Result: <i :class="diceIcon(diceNum1)"></i> <i :class="diceIcon(diceNum2)"></i>
-          </p>
         </div>
       </div>
-    </template>
-  
-    <template v-if="currentDevice == 'mobile' || currentDevice == 'pc'">
-      <div class="main-mobile max-w-[414px]">
-        <div class="top-row">
-          <div class="relative tiles-container grid grid-cols-[repeat(5,minmax(0,1fr))] gap-2 overflow-hidden">
-            <template v-for="(order, index) in specialOrders" :key="index">
-              <div class="bg-amber-700 border border-amber-200 aspect-[16/9] p-1 relative" @click="placeSpecialBet(order)">
-                <div class="center">
-                  <div class="flex justify-between w-full text-sm">
-                    <div class="w-full text-center">
-                      <i :class="['fa-solid', 'fa-horse', `text-${extraInfo[order.behind]?.color}-200`]"></i>
-                      <div>
-                        <small>{{ extraInfo[order.behind].diceText }}</small>
-                      </div>
-                    </div>
-                    <div><strong>||</strong></div>
-                    <div class="w-full text-center">
-                      <i :class="['fa-solid', 'fa-horse', `text-${extraInfo[order.ahead]?.color}-200`]"></i>
-                      <div>
-                        <small>{{ extraInfo[order.ahead].diceText }}</small>
-                      </div>
-                    </div>
-                  </div>
-                  <hr>
-                  <div class="flex justify-between w-full text-sm px-1">
-                    <div>x<strong>{{ order.odds }}</strong></div>
-                    <div class="text-black">-<strong>{{ order.penalty }}</strong></div>
-                  </div>
-                </div>
 
-                <div
-                  v-if="order?.placedBet"
-                  class="absolute bottom-1 left-7 w-6 aspect-square rounded-full text-xs text-black flex items-center justify-center"
-                  :class="order.color"
+    <div v-if="currentPage === 'game'">
+      <template v-if="currentDevice == 'tablet' || currentDevice == 'pc'">
+        <div class="main-tablet max-w-[1024px]">
+          <div class="relative tiles-container grid grid-cols-[repeat(17,minmax(0,1fr))] gap-4 overflow-hidden">
+            <template v-for="(tile, index) in baseTiles" :key="index">
+              <template v-if="tile.col === 0">
+                <div 
+                  class="flex justify-center items-center border border-4 border-black rounded-md font-bold text-black"
+                  :class="'bg-' + extraInfo[tile.row]?.color + '-300'"
                 >
-                  {{ order?.placedBet }}
+                  {{ extraInfo[tile.row]?.text}}
                 </div>
-                <!-- {{ order }} -->
-                
-              </div>
-            </template>
-          </div>
-        </div>
-        <div class="middle-row">
-          <div class="relative grid grid-cols-[1fr_1fr_22.5px_1fr_1fr_22.5px_1fr_1fr_1fr] gap-2 items-center overflow-hidden mt-4">
-            <div class="border col-span-2 text-center">1–3着</div>
-            <div></div>
-            <div class="border col-span-2 text-center">1-2着</div>
-            <div></div>
-            <div class="border col-span-3 text-center">1着</div>
-            <template v-for="(info, index) in extraInfo" :key="index">
-              <template v-for="(bet, betIndex) in info.betList" :key="betIndex">
-                <div 
-                  class="border aspect-square relative bg-green-700 px-1" 
-                  style="text-wrap: nowrap;"
-                  @click="placeBet(myPlayerIndex, bet)"
-                  >
-                  <strong class="text-lg"><small>x</small>{{ bet.odds }}</strong>
-                  <div v-if="bet.penalty !== 0" class="absolute w-1/3 h-1/2 bottom-0 right-0 bg-red-500">
-                    <small>-{{ bet.penalty }}</small>
-                  </div>
-                  <div
-                    v-if="bet.placedBet"
-                    class="absolute bottom-0 left-2 w-5 h-5 rounded-full text-xs text-black flex items-center justify-center"
-                    :class="bet.color"
-                  >
-                    {{ bet.placedBet }}
-                  </div>
-
-                </div>
-                <div 
-                  v-if="betIndex == 1 || betIndex == 3" 
-                  class="w-full text-center flex flex-col justify-around items-center gap-1"
-                  >
-                  <i :class="['fa-solid', 'fa-horse', `text-${info.color}-200`]"></i>
-                  <div class="leading-none"><small>{{ info.diceText }}</small></div>
+                <div class="flex justify-center items-center border border-2 text-sm">
+                  
                 </div>
               </template>
+              <div class="border-2 aspect-square relative" :class="tile.col === 8 ? 'red-line-after': ''" ></div>
+              <div v-if="tile.col === 13" class="border-2 finish-line bg-green-500"></div>
             </template>
+      
+      
+            <!-- Pieces layer -->
+            <div class="absolute top-0 left-[calc(4.5%+1rem)] w-[calc(88%+1rem)] h-[calc(100%+1rem)] pointer-events-none"> 
+              <div
+                v-for="(horse, horseIndex) in horseData"
+                :key="horse.horseIndex"
+                class="piece absolute text-[1.75rem] transition-all duration-300"
+                :style="{
+                  top: `${horseIndex * (100 / 9) - .25}%`,
+                  left: `${horse.position * 6.67 + .4}%`
+                }"
+              >
+                <i :class="['fa-solid', 'fa-horse', `text-${extraInfo[horseIndex]?.color}-200`]"></i>
+                <span class="absolute z-10 top-1/4 left-1/3 -translate-x-1/2  text-sm font-bold text-black">
+                  {{ extraInfo[horseIndex]?.diceText}}
+                </span>
+              </div>
+            </div>
+          </div>
+      
+          <div class="p-4">
+    
+            <template v-if="winner && currentRound == totalRound">
+              <strong class="mr-4">
+                Game is over. {{ totalWinner.name }} ({{ totalWinner.balance }}) won the entire game!
+              </strong>
+              <button
+                  @click="confirmNewRound"
+                  class="group flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600
+                        hover:from-green-600 hover:to-emerald-700
+                        text-white font-semibold px-5 py-2.5 rounded-xl
+                        shadow-lg hover:shadow-xl active:scale-95
+                        transition-all duration-200"
+              >
+                  <i class="fa-solid fa-play text-sm group-hover:translate-x-0.5 transition-transform"></i>
+                  <span class="whitespace-nowrap">Start New Round</span>
+              </button>
+    
+            </template>
+            <button
+                v-else-if="winner"
+                @click="startNewRound()"
+                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded mr-3 items-center gap-2"
+            >
+                <i class="fa-solid fa-play"></i>
+                Start New Round
+            </button>
+            <button
+                v-else-if="!autoInterval"
+                @click="startAuto"
+                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded mr-3 items-center gap-2"
+            >
+                <i class="fa-solid fa-play"></i>
+                Start
+            </button>
+    
+            <button
+                v-else
+                @click="stopAuto"
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded mr-3 items-center gap-2"
+                :disabled="!autoInterval"
+            >
+                <i class="fa-solid fa-stop"></i>
+                Stop
+            </button>
+    
+            <button v-if="!winner" @click="rollDice" class="bg-blue-500 text-white px-4 py-2 rounded">Roll Dice</button>
+    
+            <div>
+              <strong
+                  v-if="winner"
+                  class="block mt-4 px-6 py-4 rounded-xl
+                        bg-yellow-100 text-yellow-800 border border-yellow-300
+                        text-lg font-bold shadow-lg text-center"
+              >
+                  🏆 Winner: {{ extraInfo[winner.horseIndex]?.diceText }} 🏆
+              </strong>
+    
+              <strong
+                v-else-if="hasCrossedRedLine"
+                class="block mt-4 px-4 py-2 rounded-lg
+                      bg-red-50 text-red-700 border border-red-300
+                      text-sm font-semibold shadow-sm"
+              >
+                赤線を越えた馬が3頭出たため、ベット終了です。
+              </strong>
+            </div>
+            <p class="mt-4 text-3xl">
+              <strong>{{ currentRound }} / {{ totalRound }} Round</strong> - Result: <i :class="diceIcon(diceNum1)"></i> <i :class="diceIcon(diceNum2)"></i>
+            </p>
           </div>
         </div>
-        <div class="bottom-row">
-          <div class="relative grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-2 items-center overflow-hidden mt-4">
-            <div class="col-span-2">
-              <div class="grid grid-cols-[1fr_1fr_1fr] gap-1 w-[80%]">
-                <template v-for="(bet, betIndex) in myPlayer?.bets" :key="betIndex">
-                    <div 
-                        class="w-7 aspect-square flex items-center justify-center rounded-full text-black font-bold shadow-md m-1"
-                        :class="[
-                            myPlayer.coinColor,
-                            selectedBetIndex === betIndex ? 'scale-110 brightness-110 animate-pulse' : ''
-                        ]"
-                        @click="selectedBetIndex = betIndex"
-                    >
-                        {{ bet }}
+      </template>
+    
+      <template v-if="currentDevice == 'mobile' || currentDevice == 'pc'">
+        <div class="main-mobile max-w-[414px]">
+          <div class="top-row">
+            <div class="relative tiles-container grid grid-cols-[repeat(5,minmax(0,1fr))] gap-2 overflow-hidden">
+              <template v-for="(order, index) in specialOrders" :key="index">
+                <div class="bg-amber-700 border border-amber-200 aspect-[16/9] p-1 relative" @click="placeSpecialBet(order)">
+                  <div class="center">
+                    <div class="flex justify-between w-full text-sm">
+                      <div class="w-full text-center">
+                        <i :class="['fa-solid', 'fa-horse', `text-${extraInfo[order.behind]?.color}-200`]"></i>
+                        <div>
+                          <small>{{ extraInfo[order.behind].diceText }}</small>
+                        </div>
+                      </div>
+                      <div><strong>||</strong></div>
+                      <div class="w-full text-center">
+                        <i :class="['fa-solid', 'fa-horse', `text-${extraInfo[order.ahead]?.color}-200`]"></i>
+                        <div>
+                          <small>{{ extraInfo[order.ahead].diceText }}</small>
+                        </div>
+                      </div>
                     </div>
-                </template>
-              </div>
-
-            </div>
-            <template v-for="(bet, index) in topBets" :key="index">
-              <div class="text-center whitespace-nowrap relative" @click="placeSpecialBet(bet)">
-                <small>{{ bet.name }}</small>
-                <div :class="bet.bgColor" class="border aspect-square relative text-black bold text-left p-1 ">
-                  <strong class="text-3xl" :class="index == 3 ? 'text-white' : ''"><small>x</small>{{ bet.odds }}</strong>
-                  <div class="absolute w-1/3 h-1/3 bottom-0 right-0 bg-red-500 text-center" v-if="bet.penalty > 0">
-                    <small>-{{ bet.penalty }}</small>
+                    <hr>
+                    <div class="flex justify-between w-full text-sm px-1">
+                      <div>x<strong>{{ order.odds }}</strong></div>
+                      <div class="text-black">-<strong>{{ order.penalty }}</strong></div>
+                    </div>
                   </div>
-                </div>
+    
                   <div
-                      v-if="bet?.placedBet"
-                      class="absolute bottom-1 left-2 w-6 aspect-square rounded-full text-xs text-black flex items-center justify-center"
+                    v-if="order?.placedBet"
+                    class="absolute bottom-1 left-7 w-6 aspect-square rounded-full text-xs text-black flex items-center justify-center"
+                    :class="order.color"
+                  >
+                    {{ order?.placedBet }}
+                  </div>
+                  <!-- {{ order }} -->
+                  
+                </div>
+              </template>
+            </div>
+          </div>
+          <div class="middle-row">
+            <div class="relative grid grid-cols-[1fr_1fr_22.5px_1fr_1fr_22.5px_1fr_1fr_1fr] gap-2 items-center overflow-hidden mt-4">
+              <div class="border col-span-2 text-center">1–3着</div>
+              <div></div>
+              <div class="border col-span-2 text-center">1-2着</div>
+              <div></div>
+              <div class="border col-span-3 text-center">1着</div>
+              <template v-for="(info, index) in extraInfo" :key="index">
+                <template v-for="(bet, betIndex) in info.betList" :key="betIndex">
+                  <div 
+                    class="border aspect-square relative bg-green-700 px-1" 
+                    style="text-wrap: nowrap;"
+                    @click="placeBet(myPlayerIndex, bet)"
+                    >
+                    <strong class="text-lg"><small>x</small>{{ bet.odds }}</strong>
+                    <div v-if="bet.penalty !== 0" class="absolute w-1/3 h-1/2 bottom-0 right-0 bg-red-500">
+                      <small>-{{ bet.penalty }}</small>
+                    </div>
+                    <div
+                      v-if="bet.placedBet"
+                      class="absolute bottom-0 left-2 w-5 h-5 rounded-full text-xs text-black flex items-center justify-center"
                       :class="bet.color"
                     >
-                      {{ bet?.placedBet }}
-                  </div>
-              </div>
-            </template>
-          </div>
-        </div>
-        <div class="players-row">
-          <div class="relative tiles-container grid grid-cols-[repeat(5,minmax(0,1fr))] gap-4  mt-4">
-            <template v-for="(player, playerIndex) in players" :key="playerIndex">
-              <div class="playerInfo" :id="'player-'+player.name">
-                <div class="player-box">
-                    <div class="name-container text-black py-1" :class="player.coinColor">
-                        <p>{{ player.name }} : {{ player.balance }}</p>
+                      {{ bet.placedBet }}
                     </div>
-                    <div class="player-image-container relative">
-                        <div class="temp-image">
-                            <div v-html="regenerate(player.randomString)"></div>
-                        </div>
+    
+                  </div>
+                  <div 
+                    v-if="betIndex == 1 || betIndex == 3" 
+                    class="w-full text-center flex flex-col justify-around items-center gap-1"
+                    >
+                    <i :class="['fa-solid', 'fa-horse', `text-${info.color}-200`]"></i>
+                    <div class="leading-none"><small>{{ info.diceText }}</small></div>
+                  </div>
+                </template>
+              </template>
+            </div>
+          </div>
+          <div class="bottom-row">
+            <div class="relative grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-2 items-center overflow-hidden mt-4">
+              <div class="col-span-2">
+                <div class="grid grid-cols-[1fr_1fr_1fr] gap-1 w-[80%]">
+                  <template v-for="(bet, betIndex) in myPlayer?.bets" :key="betIndex">
+                      <div 
+                          class="w-7 aspect-square flex items-center justify-center rounded-full text-black font-bold shadow-md m-1"
+                          :class="[
+                              myPlayer.coinColor,
+                              selectedBetIndex === betIndex ? 'scale-110 brightness-110 animate-pulse' : ''
+                          ]"
+                          @click="selectedBetIndex = betIndex"
+                      >
+                          {{ bet }}
+                      </div>
+                  </template>
+                </div>
+    
+              </div>
+              <template v-for="(bet, index) in topBets" :key="index">
+                <div class="text-center whitespace-nowrap relative" @click="placeSpecialBet(bet)">
+                  <small>{{ bet.name }}</small>
+                  <div :class="bet.bgColor" class="border aspect-square relative text-black bold text-left p-1 ">
+                    <strong class="text-3xl" :class="index == 3 ? 'text-white' : ''"><small>x</small>{{ bet.odds }}</strong>
+                    <div class="absolute w-1/3 h-1/3 bottom-0 right-0 bg-red-500 text-center" v-if="bet.penalty > 0">
+                      <small>-{{ bet.penalty }}</small>
+                    </div>
+                  </div>
+                    <div
+                        v-if="bet?.placedBet"
+                        class="absolute bottom-1 left-2 w-6 aspect-square rounded-full text-xs text-black flex items-center justify-center"
+                        :class="bet.color"
+                      >
+                        {{ bet?.placedBet }}
                     </div>
                 </div>
-              </div>
-            </template>
+              </template>
+            </div>
+          </div>
+          <div class="players-row">
+            <div class="relative tiles-container grid grid-cols-[repeat(4,minmax(0,1fr))] gap-3  mt-4">
+              <template v-for="(player, playerIndex) in players" :key="playerIndex">
+                <div class="playerInfo" :id="'player-'+player.name" >
+                  <div class="player-box" :class="player.name == username ? 'border-2 border-yellow-400 shadow-[0_0_10px_rgba(255,215,0,0.7)]' : 'border border-gray-300'">
+                      <div class="name-container text-black py-1" :class="player.coinColor">
+                          <p>{{ player.name }} : {{ player.balance }}</p>
+                      </div>
+                      <div class="player-image-container relative">
+                          <div class="temp-image">
+                              <div v-html="regenerate(player.randomString)"></div>
+                          </div>
+                      </div>
+                  </div>
+                </div>
+              </template>
+            </div>
           </div>
         </div>
-      </div>
-    </template>
+      </template>
+    </div>
 
+    
   </div>
-
+  
 </template>
 
 <script>
+
+  import db from './firebase.js';
+  import { randomNames } from './name.js';
+
   export default {
     name: 'App',
     components: {
     },
     data() {
       return {
-        baseTiles: this.initBaseTiles(),
+        baseTiles: [],
         horseData: [],
-        extraInfo: [
-          {
-            boost: 3, text: "+3", diceText: "2,3", color: "cyan",
-            betList: [
-              {odds: 4, penalty: 4},{odds: 4, penalty: 3},
-              {odds: 5, penalty: 4},{odds: 5, penalty: 3},
-              {odds: 7, penalty: 2},{odds: 8, penalty: 2},{odds: 9, penalty: 2},
-            ]
-          },
-          {
-            boost: 3, text: "+3", diceText: "4", color: "cyan",
-            betList: [
-              {odds: 3, penalty: 1},{odds: 3, penalty: 0},
-              {odds: 4, penalty: 1},{odds: 4, penalty: 0},
-              {odds: 5, penalty: 1},{odds: 6, penalty: 0},{odds: 7, penalty: 0},
-            ]
-          },
-          {
-            boost: 2, text: "+2", diceText: "5", color: "amber",
-            betList: [
-              {odds: 2, penalty: 3},{odds: 2, penalty: 0},
-              {odds: 2, penalty: 2},{odds: 3, penalty: 2},
-              {odds: 4, penalty: 2},{odds: 4, penalty: 0},{odds: 5, penalty: 0},
-            ]
-          },
-          {
-            boost: 1, text: "+1", diceText: "6", color: "pink",
-            betList: [
-              {odds: 1, penalty: 2},{odds: 1, penalty: 0},
-              {odds: 2, penalty: 5},{odds: 2, penalty: 4},
-              {odds: 3, penalty: 2},{odds: 3, penalty: 1},{odds: 3, penalty: 0},
-            ]
-          },
-          {
-            boost: 0, text: "0", diceText: "7", color: "black",
-            betList: [
-              {odds: 1, penalty: 3},{odds: 1, penalty: 1},
-              {odds: 2, penalty: 6},{odds: 2, penalty: 5},
-              {odds: 3, penalty: 4},{odds: 3, penalty: 3},{odds: 3, penalty: 2},
-            ]
-          },
-          {
-            boost: 1, text: "+1", diceText: "8", color: "pink",
-            betList: [
-              {odds: 1, penalty: 2},{odds: 1, penalty: 0},
-              {odds: 2, penalty: 5},{odds: 2, penalty: 4},
-              {odds: 3, penalty: 2},{odds: 3, penalty: 1},{odds: 3, penalty: 0},
-            ]
-          },
-          {
-            boost: 2, text: "+2", diceText: "9", color: "amber",
-            betList: [
-              {odds: 2, penalty: 3},{odds: 2, penalty: 0},
-              {odds: 2, penalty: 2},{odds: 3, penalty: 2},
-              {odds: 4, penalty: 2},{odds: 4, penalty: 0},{odds: 5, penalty: 0},
-            ]
-          },
-          {
-            boost: 3, text: "+3", diceText: "10", color: "cyan",
-            betList: [
-              {odds: 3, penalty: 1},{odds: 3, penalty: 0},
-              {odds: 4, penalty: 1},{odds: 4, penalty: 0},
-              {odds: 5, penalty: 1},{odds: 6, penalty: 0},{odds: 7, penalty: 0},
-            ]
-          },
-          {
-            boost: 3, text: "+3", diceText: "11,12", color: "cyan",
-            betList: [
-              {odds: 4, penalty: 4},{odds: 4, penalty: 3},
-              {odds: 5, penalty: 4},{odds: 5, penalty: 3},
-              {odds: 7, penalty: 2},{odds: 8, penalty: 2},{odds: 9, penalty: 2},
-            ]
-          },
-        ],
+        extraInfo: [],
+        specialOrders: [],
+        topBets: [],
+
         diceNum1: null,
         diceNum2: null,
         diceSum: null,
@@ -349,13 +346,6 @@
         winner: null,
 
         currentDevice: '',
-        specialOrders: [],
-        topBets: [
-          {name: "青が１着", colorName: "青", bgColor: "bg-cyan-200", odds:5, penalty: 1, condition: "best"},
-          {name: "黄が１着", colorName: "黄", bgColor: "bg-amber-200", odds:3, penalty: 1,  condition: "best"},
-          {name: "赤が１着", colorName: "赤", bgColor: "bg-pink-200", odds:2, penalty: 1,  condition: "best"},
-          {name: "7が5着以下", bgColor: "bg-amber-950", odds:4, penalty: 0,  condition: "worst"}
-        ],
 
         players:[],
         autoInterval: null,
@@ -366,6 +356,33 @@
         myPlayerName: "Nozo",
         selectedBetIndex: null,
 
+        currentPage: 'before',
+
+        // ----------------
+
+        defaultNumber: 2,
+        maxPlayerNumber: 6,
+        randomNames,
+
+        firebaseRoomName: 'horse-rooms',
+        roomOption: null,
+        roomCode: null,
+        tempRoomcode: null,
+        generalData: null,
+
+        username: null,
+        onlineStatus: '',
+
+        gameResults: [],
+        previousGameResults: [],
+
+        pickedRandomString: null,
+        avatars: [],
+        randomString: 0,
+
+        isCheckingNow: false,
+        gameMessage: "",
+        isHost: false,
       }
     },
     mounted(){
@@ -381,13 +398,16 @@
           this.currentDevice = 'mobile'
       }
 
+      this.generateAvatars();
+      this.currentPlayerIndex = 0
+
+      this.username = this.getRandomName();
+
       // this.horseData = this.initHorseData();
 
       // this.specialOrders = this.initSpecialOrders();
 
-      // this.players = this.initPlayers();
 
-      // this.randomBetAll();
 
     },
     methods: {
@@ -456,25 +476,6 @@
         // take first 5 (all unique)
         return pool.slice(0, 5);
       },
-      initPlayers() {
-          const names = ["Becca", "Nozo", "Lebron", "Curry"]
-          const coinColors = [
-              'bg-yellow-400',
-              'bg-red-500',
-              'bg-blue-400',
-              'bg-purple-400',
-              'bg-amber-500'
-          ]
-
-          return names.map((name, index) => ({
-              name,
-              balance: 0,
-              score: 0,            // make sure to initialize score too
-              bets: [2, 3, 3, 4, 5],
-              randomString: this.generateAvatarSeed(),
-              coinColor: coinColors[index % coinColors.length]
-          }))
-      },
 
       generateAvatar() {
         const randomString = Math.random().toString();
@@ -523,6 +524,9 @@
         }
 
         this.previousOccurance = matchedHorse.occurance;
+
+        this.updateHorse();
+
       },
 
       diceIcon(num) {
@@ -553,6 +557,8 @@
           targetBet.placedBet = betValue;
           targetBet.color = player.coinColor;
           targetBet.playerIndex = playerIndex;
+
+          this.updateBetsAndScore();
       },
       placeSpecialBet(targetBet) {
 
@@ -571,6 +577,8 @@
         targetBet.placedBet = betValue;
         targetBet.color = this.myPlayer.coinColor;
         targetBet.playerIndex = this.myPlayerIndex;
+
+        this.updateBetsAndScore();
       },
 
       randomBetAll() {
@@ -608,7 +616,7 @@
           this.rollDice()
 
           // const frequency = 250
-          const frequency = 25
+          const frequency = 3000
           
 
           this.autoInterval = setInterval(() => {
@@ -767,9 +775,11 @@
 
           })
 
-          // this.players.forEach(player => {
-          //   if(player.balance < 0) player.balance = 0
-          // })
+          this.players.forEach(player => {
+            if(player.balance < 0) player.balance = 0
+          })
+
+          this.updateBetsAndScore();
       },
 
       startNewRound(){
@@ -803,8 +813,10 @@
           player.bets =  [2, 3, 3, 4, 5];
         })
 
+        this.updateBetsAndScore();
 
-        this.randomBetAll();
+
+        // this.randomBetAll();
 
       },
 
@@ -814,7 +826,312 @@
 
         location.reload()
       },
-      
+
+      // ------------
+      randomName(){
+          this.username = this.getRandomName();
+      },
+      retriveCode(){
+        this.tempRoomcode = localStorage.getItem('latestRoomCode') || 'No room code found'
+      },
+      async createARoom() {
+        if (this.roomCode) return;
+
+        const ok = window.confirm('Start a new room?')
+        if (!ok) return
+        // if(!this.username) return;
+
+        let isUnique = false;
+
+        // Generate a unique room code
+        while (!isUnique) {
+          this.tempRoomcode = Math.floor(10000 + Math.random() * 90000);
+          const docRef = db.collection(this.firebaseRoomName).doc(`${this.tempRoomcode}`);
+          const doc = await docRef.get();
+          if (!doc.exists) {
+            isUnique = true;
+          }
+        }
+
+        // console.log(this.roomCode)
+        this.roomCode = this.tempRoomcode
+        localStorage.setItem('latestRoomCode', this.roomCode)
+
+        this.baseTiles = this.initBaseTiles(),
+
+        this.extraInfo = [
+          {
+            boost: 3, text: "+3", diceText: "2,3", color: "cyan",
+            betList: [
+              {odds: 4, penalty: 4},{odds: 4, penalty: 3},
+              {odds: 5, penalty: 4},{odds: 5, penalty: 3},
+              {odds: 7, penalty: 2},{odds: 8, penalty: 2},{odds: 9, penalty: 2},
+            ]
+          },
+          {
+            boost: 3, text: "+3", diceText: "4", color: "cyan",
+            betList: [
+              {odds: 3, penalty: 1},{odds: 3, penalty: 0},
+              {odds: 4, penalty: 1},{odds: 4, penalty: 0},
+              {odds: 5, penalty: 1},{odds: 6, penalty: 0},{odds: 7, penalty: 0},
+            ]
+          },
+          {
+            boost: 2, text: "+2", diceText: "5", color: "amber",
+            betList: [
+              {odds: 2, penalty: 3},{odds: 2, penalty: 0},
+              {odds: 2, penalty: 2},{odds: 3, penalty: 2},
+              {odds: 4, penalty: 2},{odds: 4, penalty: 0},{odds: 5, penalty: 0},
+            ]
+          },
+          {
+            boost: 1, text: "+1", diceText: "6", color: "pink",
+            betList: [
+              {odds: 1, penalty: 2},{odds: 1, penalty: 0},
+              {odds: 2, penalty: 5},{odds: 2, penalty: 4},
+              {odds: 3, penalty: 2},{odds: 3, penalty: 1},{odds: 3, penalty: 0},
+            ]
+          },
+          {
+            boost: 0, text: "0", diceText: "7", color: "black",
+            betList: [
+              {odds: 1, penalty: 3},{odds: 1, penalty: 1},
+              {odds: 2, penalty: 6},{odds: 2, penalty: 5},
+              {odds: 3, penalty: 4},{odds: 3, penalty: 3},{odds: 3, penalty: 2},
+            ]
+          },
+          {
+            boost: 1, text: "+1", diceText: "8", color: "pink",
+            betList: [
+              {odds: 1, penalty: 2},{odds: 1, penalty: 0},
+              {odds: 2, penalty: 5},{odds: 2, penalty: 4},
+              {odds: 3, penalty: 2},{odds: 3, penalty: 1},{odds: 3, penalty: 0},
+            ]
+          },
+          {
+            boost: 2, text: "+2", diceText: "9", color: "amber",
+            betList: [
+              {odds: 2, penalty: 3},{odds: 2, penalty: 0},
+              {odds: 2, penalty: 2},{odds: 3, penalty: 2},
+              {odds: 4, penalty: 2},{odds: 4, penalty: 0},{odds: 5, penalty: 0},
+            ]
+          },
+          {
+            boost: 3, text: "+3", diceText: "10", color: "cyan",
+            betList: [
+              {odds: 3, penalty: 1},{odds: 3, penalty: 0},
+              {odds: 4, penalty: 1},{odds: 4, penalty: 0},
+              {odds: 5, penalty: 1},{odds: 6, penalty: 0},{odds: 7, penalty: 0},
+            ]
+          },
+          {
+            boost: 3, text: "+3", diceText: "11,12", color: "cyan",
+            betList: [
+              {odds: 4, penalty: 4},{odds: 4, penalty: 3},
+              {odds: 5, penalty: 4},{odds: 5, penalty: 3},
+              {odds: 7, penalty: 2},{odds: 8, penalty: 2},{odds: 9, penalty: 2},
+            ]
+          },
+        ],
+
+        this.horseData = this.initHorseData();
+
+        this.specialOrders = this.initSpecialOrders();
+
+        this.topBets = [
+          {name: "青が１着", colorName: "青", bgColor: "bg-cyan-200", odds:5, penalty: 1, condition: "best"},
+          {name: "黄が１着", colorName: "黄", bgColor: "bg-amber-200", odds:3, penalty: 1,  condition: "best"},
+          {name: "赤が１着", colorName: "赤", bgColor: "bg-pink-200", odds:2, penalty: 1,  condition: "best"},
+          {name: "7が5着以下", bgColor: "bg-amber-950", odds:4, penalty: 0,  condition: "worst"}
+        ];
+
+        const ref = db.collection(this.firebaseRoomName)
+        ref.doc(`${this.roomCode}`).set({
+          games: JSON.stringify([{ gameStatus: 'waiting' }]),
+          players: [],
+          onlineStatus: 'waiting',
+          horseData : this.horseData,
+          extraInfo : this.extraInfo,
+          specialOrders : this.specialOrders,
+          topBets : this.topBets,
+          hasCrossedRedLine: false,
+        })
+
+        this.roomOption = 'create'
+        this.onlineStatus = 'waiting'
+        this.isHost = true
+        await this.reciveTheData()
+      },
+
+      async joinARoom() {
+
+        const docRef = db.collection(this.firebaseRoomName).doc(`${this.tempRoomcode}`);
+
+        try {
+          const doc = await docRef.get();
+          if (doc.exists) {
+            if(doc.data().onlineStatus == 'playing') return alert('This room is closed.')
+
+            this.players = doc.data().players;
+            this.onlineStatus = doc.data().players;
+
+            if (!this.players.includes(this.username)) {
+              this.players.push(
+                {
+                  name:this.username,
+                  isHost:false,
+                  randomString: this.randomString,
+
+                  balance: 0,
+                  score: 0,            // make sure to initialize score too
+                  bets: [2, 3, 3, 4, 5],
+                }
+              );
+              this.roomCode = this.tempRoomcode
+
+            }
+
+            await docRef.update({
+              players: this.players,
+            });
+            this.reciveTheData();
+          } else {
+            console.log('No such document!');
+          }
+        } catch (error) {
+          console.log('Error getting document:', error);
+        }
+      },
+
+      reciveTheData(){
+        
+        db.collection(this.firebaseRoomName).doc(`${this.roomCode}`)
+        .onSnapshot((doc) => {
+
+          this.generalData = doc.data()
+          
+          // joining room and wait until it closes
+          // if(this.currentPage == 'before'){
+          this.onlineStatus = this.generalData?.onlineStatus
+          this.players = this.generalData?.players
+
+          this.extraInfo = this.generalData?.extraInfo
+          this.specialOrders = this.generalData?.specialOrders
+          this.topBets = this.generalData?.topBets
+
+          // this.horseData = this.generalData?.horseData
+          this.hasCrossedRedLine = this.generalData?.hasCrossedRedLine
+          this.winner = this.generalData?.winner
+
+
+
+          if(this.onlineStatus == 'playing' || this.onlineStatus == 'distributing') {
+            this.deck = this.generalData.deck;
+            this.publicPile = this.generalData.publicPile;
+
+
+            this.lastSubmitBy = this.generalData?.lastSubmitBy
+
+
+            // check if the game is overr
+
+
+            this.currentPlayerIndex = this.generalData.currentPlayerIndex
+            this.currentPage = 'game'
+            localStorage.setItem('latestRoomCode', null);
+
+            
+            this.isRevolutionGoing = this.generalData.isRevolutionGoing
+            this.isTempRevolutionGoing = this.generalData.isTempRevolutionGoing
+
+            this.gameResults = this.generalData.gameResults
+
+            
+
+          }
+        
+        })
+      },
+
+      async closeTheRoom(){
+
+        if(this.players.length < 2) return
+
+        const coinColors = [
+            'bg-yellow-400',
+            'bg-red-500',
+            'bg-blue-400',
+            'bg-purple-400',
+            'bg-amber-500'
+        ]
+
+        this.players.forEach((player,index) =>{
+          player.coinColor = coinColors[index]
+        })
+
+        this.currentPage = 'game';
+
+        // this.gameResults = []
+
+        this.onlineStatus = 'playing'
+        const ref = db.collection(this.firebaseRoomName)
+        ref.doc(`${this.roomCode}`).update({
+          // gameResults: this.gameResults,
+          // previousGameResults: this.previousGameResults,
+          // deck: this.deck,
+          hasCrossedRedLine: this.hasCrossedRedLine,
+          winner: '',
+          totalWinner: '',
+          players: this.players,
+          onlineStatus: this.onlineStatus,
+          // currentPlayerIndex: this.currentPlayerIndex,
+          // publicPile: this.publicPile,
+
+        })
+      },
+      updateBetsAndScore(){
+        const ref = db.collection(this.firebaseRoomName)
+        ref.doc(`${this.roomCode}`).update({
+          players: this.players,
+          extraInfo: this.extraInfo,
+          specialOrders: this.specialOrders,
+          topBets: this.topBets,
+          hasCrossedRedLine: this.hasCrossedRedLine,
+        })
+      },
+      updateHorse(){
+        const ref = db.collection(this.firebaseRoomName)
+        ref.doc(`${this.roomCode}`).update({
+          horseData: this.horseData,
+          hasCrossedRedLine: this.hasCrossedRedLine,
+          winner: this.winner,
+        })
+      },
+
+
+      generateAvatars() {
+        this.tempAvatarCode = null;
+
+        this.avatars = [1, 2, 3, 4, 5,6,7,8,9].map(() => {
+          const randomString = Math.random().toString();
+          return {
+            avatar: window.multiavatar(randomString),
+            randomString: randomString
+          };
+        });
+      },
+      getRandomName() {
+        let randomName;
+        do {
+          const randomIndex = Math.floor(Math.random() * this.randomNames.length);
+          randomName = this.randomNames[randomIndex];
+        } while (this.players.some(player => player.name === randomName));
+
+        // this.generateAvatars();
+
+        return randomName;
+      },
+    
 
 
 
@@ -831,12 +1148,21 @@
         },
 
         myPlayer() {
-            return this.players.find(player => player.name === this.myPlayerName)
+            return this.players.find(player => player.name === this.username)
         },
 
         myPlayerIndex(){
-          return this.players.findIndex(player => player.name === this.myPlayerName);
+          return this.players.findIndex(player => player.name === this.username);
         },
+
+        readyToPlay() {
+          const namePattern = /^[^\s!@#$%^&*(),.?":{}|<>]+$/;
+
+          // Check if the username is valid
+          return namePattern.test(this.username) && this.username?.trim() !== '';
+        },
+
+        
 
     }
 
@@ -890,10 +1216,10 @@
 
   .playerInfo .player-box{
     position: relative;
-    border: 1px solid black;
+    /* border: 1px solid black; */
     transition: border-color 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
     
-    width: 80px;
+    /* width: 80px; */
   }
 
   .playerInfo .name-container {
