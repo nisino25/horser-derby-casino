@@ -186,6 +186,10 @@
                 <div 
                   class="bg-amber-700 border border-amber-200 aspect-[16/9] p-1 relative"
                   @click="placeSpecialBet(order)"
+                  :class="{
+                    'cannotBet': !winner && (hasCrossedRedLine || order.placedBet),
+                    'blink-win': winner && order.isSuccess,
+                  }"
                   >
                   <div class="center">
                     <div class="flex justify-between w-full text-sm">
@@ -231,12 +235,11 @@
               <template v-for="(info, index) in extraInfo" :key="index">
                 <template v-for="(bet, betIndex) in info.betList" :key="betIndex">
                   <div 
-                    class="border aspect-square relative px-1" 
+                    class="border aspect-square relative px-1 bg-green-700" 
                     style="text-wrap: nowrap;"
                     :class="{
-                      'bg-gray-500/60': !winner && (hasCrossedRedLine || bet.placedBet),
-                      'bg-green-700': !winner && !hasCrossedRedLine && !bet.placeBet,
-                      'bg-yellow-400': winner && bet.isSuccess,
+                      'cannotBet': !winner && (hasCrossedRedLine || bet.placedBet),
+                      'blink-win': winner && bet.isSuccess,
                     }"
 
                     @click="placeBet(myPlayerIndex, bet)"
@@ -274,9 +277,9 @@
                           class="w-7 aspect-square flex items-center justify-center rounded-full text-black font-bold shadow-md m-1"
                           :class="[
                               myPlayer.coinColor,
-                              selectedBetIndex === betIndex ? 'scale-110 brightness-110 animate-pulse' : ''
+                              selectedBetIndex === betIndex ? 'brightness-100' : 'brightness-50'
                           ]"
-                          @click="selectedBetIndex = betIndex"
+                          @click="this.selectedBetIndex = this.selectedBetIndex === betIndex ? null : betIndex"
                       >
                           {{ bet }}
                       </div>
@@ -285,9 +288,20 @@
     
               </div>
               <template v-for="(bet, index) in topBets" :key="index">
-                <div class="text-center whitespace-nowrap relative" @click="placeSpecialBet(bet)">
+                <div 
+                  class="text-center whitespace-nowrap relative" 
+                  @click="placeSpecialBet(bet)"
+                  >
                   <small>{{ bet.name }}</small>
-                  <div :class="bet.bgColor" class="border aspect-square relative text-black bold text-left p-1 ">
+                  <div 
+                    :class="[
+                        bet.bgColor,
+                        { cannotBet: !winner && (hasCrossedRedLine || bet.placedBet) },
+                        { 'blink-win': winner && bet.isSuccess},
+                    ]"
+
+                    class="border aspect-square relative text-black bold text-left p-1 "
+                    >
                     <strong class="text-3xl" :class="index == 3 ? 'text-white' : ''"><small>x</small>{{ bet.odds }}</strong>
                     <div class="absolute w-1/3 h-1/3 bottom-0 right-0 bg-red-500 text-center" v-if="bet.penalty > 0">
                       <small>-{{ bet.penalty }}</small>
@@ -310,7 +324,7 @@
                 <div class="playerInfo" :id="'player-'+player.name" >
                   <div class="player-box" :class="player.name == username ? 'border-2 border-yellow-400 shadow-[0_0_10px_rgba(255,215,0,0.7)]' : 'border border-gray-300'">
                       <div class="name-container text-black py-1" :class="player.coinColor">
-                          <p>{{ player.name }} : <strong>{{ player.balance }}</strong></p>
+                          <p>{{ player.name }}</p>
                       </div>
                       <div class="player-image-container relative">
                           <div class="temp-image">
@@ -319,7 +333,10 @@
                       </div>
                   </div>
                   <div class="w-full border text-black" :class="player.coinColor">
-                    <span style="font-size: 0.75rem;">残ベット：{{ player.bets.length }}枚</span>
+                    <div class="flex justify-between px-2">
+                      <span style="font-size: 0.75rem;">{{ player.balance }}P</span>
+                      <span style="font-size: 0.75rem;">残{{ player.bets.length }}</span>
+                    </div>
                   </div>
                 </div>
               </template>
@@ -396,8 +413,9 @@
         isCheckingNow: false,
         gameMessage: "",
         isHost: false,
+        developingMode: false,
 
-        frequency: 25,
+        frequency: 2500,
       }
       
     },
@@ -419,9 +437,12 @@
 
       this.username = this.getRandomName();
 
-      // this.horseData = this.initHorseData();
 
-      // this.specialOrders = this.initSpecialOrders();
+      this.developingMode = true;
+      if(this.developingMode){
+        this.frequency = 25
+      }
+
 
 
 
@@ -585,8 +606,13 @@
 
         let betValue;
 
-        betValue = this.myPlayer.bets.splice(this.selectedBetIndex, 1)[0];
-        this.selectedBetIndex = null;
+        if (!this.selectedBetIndex){
+          betValue = this.myPlayer.bets.pop();
+        }else{
+          betValue = this.myPlayer.bets.splice(this.selectedBetIndex, 1)[0];
+          this.selectedBetIndex = null;
+        }
+
 
         // Apply the bet to the target tile
         targetBet.placedBet = betValue;
@@ -843,18 +869,22 @@
         location.reload()
       },
 
-      // ------------
+      // ----------------------
       randomName(){
           this.username = this.getRandomName();
       },
       retriveCode(){
         this.tempRoomcode = localStorage.getItem('latestRoomCode') || 'No room code found'
+        if(this.devSkip) this.joinARoom()
       },
       async createARoom() {
         if (this.roomCode) return;
 
-        const ok = window.confirm('Start a new room?')
-        if (!ok) return
+
+        if(!this.developingMode){
+          const ok = window.confirm('Start a new room?')
+          if (!ok) return
+        }
         // if(!this.username) return;
 
         let isUnique = false;
@@ -1148,6 +1178,15 @@
 
         return randomName;
       },
+
+      devSkip(mode){
+        if(this.developingMode == false) return
+        if(mode == 'create'){
+          this.createARoom()
+        }else if(mode == 'join'){   
+          this.joinARoom();
+        }
+      },
       
     },
     computed: {
@@ -1282,5 +1321,29 @@
 
     text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
   }
+
+  .cannotBet::before{
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 10;
+  }
+  @keyframes blink-win {
+      0%, 100% {
+          background-color: #facc15; /* yellow-400 */
+      }
+      50% {
+          background-color: grey;
+      }
+  }
+
+  .blink-win {
+    animation: blink-win 1.5s infinite;
+  }
+
 
 </style>
