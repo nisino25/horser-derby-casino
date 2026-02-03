@@ -226,7 +226,7 @@
             </div>
           </div>
           <div class="middle-row">
-            <div class="relative grid grid-cols-[1fr_1fr_22.5px_1fr_1fr_22.5px_1fr_1fr_1fr] gap-2 items-center overflow-hidden mt-4">
+            <div class="relative grid grid-cols-[1fr_1fr_22.5px_1fr_1fr_22.5px_1fr_1fr_1fr] gap-1 items-center overflow-hidden mt-4">
               <div class="border col-span-2 text-center">1–3着</div>
               <div></div>
               <div class="border col-span-2 text-center">1-2着</div>
@@ -235,7 +235,7 @@
               <template v-for="(info, index) in extraInfo" :key="index">
                 <template v-for="(bet, betIndex) in info.betList" :key="betIndex">
                   <div 
-                    class="border aspect-square relative px-1 bg-green-700" 
+                    class="border aspect-square relative p-1 bg-green-700" 
                     style="text-wrap: nowrap;"
                     :class="{
                       'cannotBet': !winner && (hasCrossedRedLine || bet.placedBet),
@@ -244,13 +244,13 @@
 
                     @click="placeBet(myPlayerIndex, bet)"
                     >
-                    <strong class="text-lg"><small>x</small>{{ bet.odds }}</strong>
-                    <div v-if="bet.penalty !== 0" class="absolute w-1/3 h-1/2 bottom-0 right-0 bg-red-500">
-                      <small>-{{ bet.penalty }}</small>
+                    <div class="w-[80%]">
+                      <strong class="text-lg block leading-none"><small>x</small>{{ bet.odds }}</strong>
+                      <small class="bg-red-500 leading-none px-1">-{{ bet.penalty }}</small>
                     </div>
                     <div
                       v-if="bet.placedBet"
-                      class="absolute bottom-0 left-2 w-5 h-5 rounded-full text-xs text-black flex items-center justify-center"
+                      class="absolute bottom-3 right-0 w-5 aspect-square rounded-full text-xs text-black flex items-center justify-center"
                       :class="bet.color"
                     >
                       {{ bet.placedBet }}
@@ -1319,7 +1319,7 @@
 
     font-weight: bold;
 
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    /* text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5); */
   }
 
   .cannotBet::before{
