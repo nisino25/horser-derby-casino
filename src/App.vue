@@ -330,10 +330,17 @@
                           <div class="temp-image">
                               <div v-html="regenerate(player.randomString)"></div>
                           </div>
+                          <template v-if="winner">
+                            <div class="absolute top-0 left-0 w-full h-full flex flex-col justify-center items-center bg-black bg-opacity-50 text-white text-center p-2 text-2xl font-bold">
+                              <strong :class="diffClass(player)">
+                                {{ player.balanceArr[player.balanceArr.length - 1] - player.balanceArr[player.balanceArr.length - 2] }}
+                              </strong>
+                            </div>
+                          </template>
                       </div>
                   </div>
                   <div class="w-full border text-black" :class="player.coinColor">
-                    <div class="flex justify-between px-2">
+                    <div class="flex justify-between px-2" style="text-wrap: nowrap;">
                       <span style="font-size: 0.75rem;">{{ player.balance }}P</span>
                       <span style="font-size: 0.75rem;">残{{ player.bets.length }}</span>
                     </div>
@@ -438,7 +445,7 @@
       this.username = this.getRandomName();
 
 
-      this.developingMode = true;
+      // this.developingMode = true;
       if(this.developingMode){
         this.frequency = 25
       }
@@ -814,9 +821,9 @@
 
           })
 
-          // this.players.forEach(player => {
-          //   if(player.balance < 0) player.balance = 0
-          // })
+          this.players.forEach(player => {
+            player.balanceArr.push(player.balance);
+          })
 
           this.updateBetsAndScore();
       },
@@ -1029,6 +1036,7 @@
                   randomString: this.randomString,
 
                   balance: 0,
+                  balanceArr: [0],
                   score: 0,            // make sure to initialize score too
                   bets: [2, 3, 3, 4, 5],
                 }
@@ -1187,6 +1195,15 @@
           this.joinARoom();
         }
       },
+
+      diffClass(player) {
+        const arr = player.balanceArr
+        const diff = arr[arr.length - 1] - arr[arr.length - 2]
+
+        if (diff > 0) return 'text-green-400'
+        if (diff < 0) return 'text-red-400'
+        return 'text-gray-300'
+      }
       
     },
     computed: {
