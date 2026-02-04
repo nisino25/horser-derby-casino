@@ -1035,7 +1035,6 @@
               this.players.push(
                 {
                   name:this.username,
-                  isHost:false,
                   randomString: this.randomString,
 
                   balance: 0,
@@ -1077,16 +1076,16 @@
           this.topBets = this.generalData?.topBets
           
           // this.horseData = this.generalData?.horseData
-          if(this.isHost == false){
+          // if(this.isHost == false){
             this.hasCrossedRedLine = this.generalData?.hasCrossedRedLine
             this.winner = this.generalData?.winner
-          }
+          // }
 
 
 
           if(this.onlineStatus == 'playing' || this.onlineStatus == 'distributing') {
             this.deck = this.generalData.deck;
-            this.publicPile = this.generalData.publicPile;
+            // this.publicPile = this.generalData.publicPile;
 
 
             this.lastSubmitBy = this.generalData?.lastSubmitBy
@@ -1100,8 +1099,8 @@
             localStorage.setItem('latestRoomCode', null);
 
             
-            this.isRevolutionGoing = this.generalData.isRevolutionGoing
-            this.isTempRevolutionGoing = this.generalData.isTempRevolutionGoing
+            // this.isRevolutionGoing = this.generalData.isRevolutionGoing
+            // this.isTempRevolutionGoing = this.generalData.isTempRevolutionGoing
 
             this.gameResults = this.generalData.gameResults
 
