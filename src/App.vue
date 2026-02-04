@@ -229,7 +229,7 @@
             </div>
           </div>
           <div class="middle-row">
-            <div class="relative grid grid-cols-[1fr_1fr_22.5px_1fr_1fr_22.5px_1fr_1fr_1fr] gap-1 items-center overflow-hidden mt-4">
+            <div class="relative grid grid-cols-[1fr_1fr_22.5px_1fr_1fr_22.5px_1fr_1fr_1fr] gap-1 items-center overflow-hidden mt-2">
               <div class="border col-span-2 text-center">1–3着</div>
               <div></div>
               <div class="border col-span-2 text-center">1-2着</div>
@@ -272,7 +272,7 @@
             </div>
           </div>
           <div class="bottom-row">
-            <div class="relative grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-2 items-center overflow-hidden mt-4">
+            <div class="relative grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-2 items-center overflow-hidden mt-2">
               <div class="col-span-2">
                 <div class="grid grid-cols-[1fr_1fr_1fr] gap-1 w-[80%]">
                   <template v-for="(bet, betIndex) in myPlayer?.bets" :key="betIndex">
@@ -322,7 +322,7 @@
             </div>
           </div>
           <div class="players-row">
-            <div class="relative tiles-container grid grid-cols-[repeat(4,minmax(0,1fr))] gap-3  mt-4">
+            <div class="relative tiles-container grid grid-cols-[repeat(4,minmax(0,1fr))] gap-3  mt-2">
               <template v-for="(player, playerIndex) in players" :key="playerIndex">
                 <div class="playerInfo" :id="'player-'+player.name" >
                   <div class="player-box" :class="player.name == username ? 'border-2 border-yellow-400 shadow-[0_0_10px_rgba(255,215,0,0.7)]' : 'border border-gray-300'">
