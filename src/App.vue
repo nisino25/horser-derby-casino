@@ -45,10 +45,13 @@
           </template>
 
           <template v-if="roomOption && roomCode">
-            <h2 v-if="isHost">You are host</h2>
-            Game Speed
-            <input type="number" v-model="frequency" class="mb-4">
-            <hr>
+            <template  v-if="isHost">
+              <h2>You are host</h2>
+              Game Speed
+              <input type="number" v-model="frequency" class="mb-4">
+              <hr>
+            </template>
+              
             <h2 v-if="!isHost">Welcome {{ username }}!</h2>
             <p>Room code: <strong class="font-size: 2.5em; color: crimson; margin-right: 5px; font-weight: bold;">{{ roomCode }}</strong></p>
             <hr>
@@ -235,7 +238,7 @@
               <template v-for="(info, index) in extraInfo" :key="index">
                 <template v-for="(bet, betIndex) in info.betList" :key="betIndex">
                   <div 
-                    class="border aspect-square relative p-1 bg-green-700" 
+                    class="border aspect-square relative px-1 bg-green-700" 
                     style="text-wrap: nowrap;"
                     :class="{
                       'cannotBet': !winner && (hasCrossedRedLine || bet.placedBet),
@@ -1074,8 +1077,10 @@
           this.topBets = this.generalData?.topBets
           
           // this.horseData = this.generalData?.horseData
-          this.hasCrossedRedLine = this.generalData?.hasCrossedRedLine
-          this.winner = this.generalData?.winner
+          if(this.isHost == false){
+            this.hasCrossedRedLine = this.generalData?.hasCrossedRedLine
+            this.winner = this.generalData?.winner
+          }
 
 
 
