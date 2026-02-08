@@ -86,7 +86,7 @@
                   <div class="flex justify-center items-center border border-2 text-sm" :class="previousHorsePosition?.position == 0 && previousHorsePosition?.index == tile.row ? 'bg-yellow-400' : ''"></div>
                 </template>
                 <div class="border-2 aspect-square relative" :class="tile.col === 8 ? 'red-line-after': ''" >
-<div :class="previousHorsePosition?.position == tile.col +1 && previousHorsePosition?.index == tile.row ? 'bg-yellow-400' : ''" class="w-full aspect-square"></div>
+            <div :class="previousHorsePosition?.position == tile.col +1 && previousHorsePosition?.index == tile.row ? 'bg-yellow-400' : ''" class="w-full aspect-square"></div>
                 </div>
                 <div v-if="tile.col === 13" class="border-2 finish-line bg-green-500"></div>
               </template>
@@ -234,11 +234,11 @@
             </div>
             <div class="middle-row">
               <div class="relative grid grid-cols-[1fr_1fr_22.5px_1fr_1fr_22.5px_1fr_1fr_1fr] gap-1 items-center overflow-hidden mt-2">
-                <div class="border col-span-2 text-center">1–3着</div>
+                <div class="border col-span-2 text-center leading-tight">1–3着</div>
                 <div></div>
-                <div class="border col-span-2 text-center">1-2着</div>
+                <div class="border col-span-2 text-center leading-tight">1-2着</div>
                 <div></div>
-                <div class="border col-span-3 text-center">1着</div>
+                <div class="border col-span-3 text-center leading-tight">1着</div>
                 <template v-for="(info, index) in extraInfo" :key="index">
                   <template v-for="(bet, betIndex) in info.betList" :key="betIndex">
                     <div 
@@ -266,7 +266,7 @@
                     </div>
                     <div 
                       v-if="betIndex == 1 || betIndex == 3" 
-                      class="w-full text-center flex flex-col justify-around items-center gap-1"
+                      class="w-full text-center flex flex-col justify-around items-center gap-1 text-sm"
                       >
                       <i :class="['fa-solid', 'fa-horse', `text-${info.color}-200`]"></i>
                       <div class="leading-none"><small>{{ info.diceText }}</small></div>
@@ -307,10 +307,10 @@
                           { cannotBet: !winner && (hasCrossedRedLine || bet.placedBet) },
                           { 'blink-win': winner && bet.isSuccess},
                       ]"
-                      class="border aspect-square relative text-black bold text-left p-1 "
+                      class="border relative text-black bold text-left p-1 "
                       >
-                      <strong class="text-3xl" :class="index == 3 ? 'text-white' : ''"><small>x</small>{{ bet.odds }}</strong>
-                      <div class="absolute w-1/3 h-1/3 bottom-0 right-0 bg-red-500 text-center" v-if="bet.penalty > 0">
+                      <strong class="text-2xl" :class="index == 3 ? 'text-white' : ''"><small>x</small>{{ bet.odds }}</strong>
+                      <div class="absolute w-1/3 h-2/5 bottom-0 right-0 bg-red-500 text-center" v-if="bet.penalty > 0">
                         <small>-{{ bet.penalty }}</small>
                       </div>
                     </div>
@@ -340,8 +340,7 @@
                             <template v-if="winner">
                               <div class="absolute top-0 left-0 w-full h-full flex flex-col justify-center items-center bg-black bg-opacity-50 text-white text-center p-2 text-2xl font-bold">
                                 <strong :class="diffClass(player)">
-                                  {{ showTheSign(player.balanceArr[player.balanceArr.length - 1] - player.balanceArr[player.balanceArr.length - 2]) }}
-                                  {{ player.balanceArr[player.balanceArr.length - 1] - player.balanceArr[player.balanceArr.length - 2] }}
+                                  {{ showTheSign(player.balanceArr[player.balanceArr.length - 1] - player.balanceArr[player.balanceArr.length - 2]) }}{{ player.balanceArr[player.balanceArr.length - 1] - player.balanceArr[player.balanceArr.length - 2] }}
                                 </strong>
                               </div>
                             </template>
@@ -349,7 +348,7 @@
                     </div>
                     <div class="w-full border text-black" :class="player.coinColor">
                       <div class="flex justify-between px-2" style="text-wrap: nowrap;">
-                        <span style="font-size: 0.75rem;">{{ player.balance }}P</span>
+                        <span style="font-size: 0.75rem;">{{ player.balance }}点</span>
                         <span style="font-size: 0.75rem;">残{{ player.bets.length }}</span>
                       </div>
                     </div>
@@ -457,9 +456,9 @@
 
 
       this.developingMode = true;
-      // this.developingMode = false;
+      this.developingMode = false;
       if(this.developingMode){
-        this.frequency = 2000;
+        this.frequency = 500;
       }
 
       // Create the audio objects
@@ -638,7 +637,7 @@
           targetBet.playerIndex = playerIndex;
 
           this.playSound('coin');
-          this.updateBetsAndScore();
+          this.updateBets();
       },
       placeSpecialBet(targetBet) {
 
@@ -663,7 +662,7 @@
         targetBet.playerIndex = this.myPlayerIndex;
 
         this.playSound('coin');
-        this.updateBetsAndScore();
+        this.updateBets();
       },
 
       randomBetAll() {
@@ -867,7 +866,7 @@
             player.balanceArr.push(player.balance);
           })
 
-          this.updateBetsAndScore();
+          this.updateScore();
       },
 
       startNewRound(){
@@ -906,7 +905,7 @@
           player.bets =  [2, 3, 3, 4, 5];
         })
 
-        this.updateBetsAndScore();
+        this.updateScore();
 
 
         // this.randomBetAll();
@@ -1211,15 +1210,13 @@
 
         })
       },
-      updateBetsAndScore(){
+      updateBets(){
         const ref = db.collection(this.firebaseRoomName)
         ref.doc(`${this.roomCode}`).update({
           players: this.players,
           extraInfo: this.extraInfo,
           specialOrders: this.specialOrders,
           topBets: this.topBets,
-          hasCrossedRedLine: this.hasCrossedRedLine,
-          winner: false,
         })
       },
       updateHorse(){
@@ -1228,6 +1225,17 @@
           horseData: this.horseData,
           hasCrossedRedLine: this.hasCrossedRedLine,
           winner: this.winner,
+        })
+      },
+      updateScore(){
+        const ref = db.collection(this.firebaseRoomName)
+        ref.doc(`${this.roomCode}`).update({
+          players: this.players,
+          extraInfo: this.extraInfo,
+          specialOrders: this.specialOrders,
+          topBets: this.topBets,
+          hasCrossedRedLine: this.hasCrossedRedLine,
+          winner: false,
         })
       },
 
@@ -1274,9 +1282,8 @@
       },
 
       showTheSign(number){
-        if(number == 0 || !number) return "";
-        if(number >= 0) return "+"
-        else return "-"
+        if(number <= 0 || !number) return "";
+        else return "+";
       },
 
       playSound(type) {
