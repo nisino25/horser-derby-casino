@@ -97,9 +97,9 @@
                 <div
                   v-for="(horse, horseIndex) in horseData"
                   :key="horse.horseIndex"
-                  class="piece absolute text-[1.3rem] transition-all duration-300"
+                  class="piece absolute text-[2rem] transition-all duration-300"
                   :style="{
-                    top: `${horseIndex * (100 / 9) - .25}%`,
+                    top: `${horseIndex * (100 / 9) - .5}%`,
                     left: `${horse.position * 6.67 - .3}%`
                   }"
                 >
@@ -191,7 +191,7 @@
               <div class="relative tiles-container grid grid-cols-[repeat(5,minmax(0,1fr))] gap-2 overflow-hidden">
                 <template v-for="(order, index) in specialOrders" :key="index">
                   <div 
-                    class="bg-amber-700 border border-amber-200 aspect-[16/9] p-1 relative"
+                    class="bg-amber-700 border border-amber-200 aspect-[16/9] p-[0.1rem] relative"
                     @click="placeSpecialBet(order)"
                     :class="{
                       'cannotBet': !winner && (hasCrossedRedLine || order.placedBet),
@@ -253,7 +253,7 @@
                       >
                       <div class="w-[80%]">
                         <strong class="text-lg block leading-none"><small>x</small>{{ bet.odds }}</strong>
-                        <small class="bg-red-500 leading-none px-1">-{{ bet.penalty }}</small>
+                        <small class="bg-red-500 leading-none px-1 text-sm">-{{ bet.penalty }}</small>
                       </div>
                       <div
                         v-if="bet.placedBet"
@@ -296,7 +296,8 @@
                 </div>
                 <template v-for="(bet, index) in topBets" :key="index">
                   <div 
-                    class="text-center whitespace-nowrap relative" 
+                    class="text-center whitespace-nowrap relative"
+                    :class="index == 3 ? 'text-sm' : ''"
                     @click="placeSpecialBet(bet)"
                     >
                     <small>{{ bet.name }}</small>
@@ -306,7 +307,6 @@
                           { cannotBet: !winner && (hasCrossedRedLine || bet.placedBet) },
                           { 'blink-win': winner && bet.isSuccess},
                       ]"
-  
                       class="border aspect-square relative text-black bold text-left p-1 "
                       >
                       <strong class="text-3xl" :class="index == 3 ? 'text-white' : ''"><small>x</small>{{ bet.odds }}</strong>
@@ -340,6 +340,7 @@
                             <template v-if="winner">
                               <div class="absolute top-0 left-0 w-full h-full flex flex-col justify-center items-center bg-black bg-opacity-50 text-white text-center p-2 text-2xl font-bold">
                                 <strong :class="diffClass(player)">
+                                  {{ showTheSign(player.balanceArr[player.balanceArr.length - 1] - player.balanceArr[player.balanceArr.length - 2]) }}
                                   {{ player.balanceArr[player.balanceArr.length - 1] - player.balanceArr[player.balanceArr.length - 2] }}
                                 </strong>
                               </div>
@@ -451,7 +452,7 @@
 
 
       this.developingMode = true;
-      this.developingMode = false;
+      // this.developingMode = false;
       if(this.developingMode){
         this.frequency = 2000;
       }
@@ -1237,6 +1238,12 @@
         if (diff > 0) return 'text-green-400'
         if (diff < 0) return 'text-red-400'
         return 'text-gray-300'
+      },
+
+      showTheSign(number){
+        if(number == 0 || !number) return "";
+        if(number >= 0) return "+"
+        else return "-"
       }
       
     },
