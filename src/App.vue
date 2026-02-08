@@ -41,7 +41,8 @@
               <button @click="roomOption = null" class="bg-[#B83A4B] text-white block mx-auto p-[10px] rounded w-1/2 mb-2">Back</button>
               <button @click="username = getRandomName();" class="bg-[black] text-white block mx-auto p-[10px] rounded mb-2 w-1/2">Random Name</button>
               <!-- <button v-if="readyToPlay && roomOption === 'create'" @click="createARoom()" class="bg-[#3581B8] text-white  block  mx-auto p-[10px] rounded w-1/2 mb-2">Create</button> -->
-              <button v-if="tempRoomcode >= 10000 && tempRoomcode <= 99999 && readyToPlay && roomOption === 'join'" @click="joinARoom()" class="bg-[#3581B8] text-white  block mx-auto p-[10px] rounded w-1/2">Join</button>
+              <button v-if="tempRoomcode >= 10000 && tempRoomcode <= 99999 && readyToPlay && roomOption === 'join'" @click="joinARoom()" class="bg-[#3581B8] text-white  block mx-auto p-[10px] rounded w-1/2 mb-2">Join</button>
+              <button v-if="tempRoomcode >= 10000 && tempRoomcode <= 99999 && readyToPlay && roomOption === 'join'" @click="monitorGame()" class="bg-yellow-400 text-white  block mx-auto p-[10px] rounded w-1/2">Monitor mode</button>
           </template>
 
           <template v-if="roomOption && roomCode">
@@ -65,297 +66,300 @@
             <button v-if="players?.length >= 2 && isHost"  @click="closeTheRoom()" class="bg-[#3581B8] text-white  block  mx-auto p-[10px] rounded w-1/2 mb-2">Close room</button>
           </template>
         </div>
-      </div>
-
-    <div v-if="currentPage === 'game'">
-      <template v-if="currentDevice == 'tablet' || currentDevice == 'pc'">
-        <div class="main-tablet max-w-[1024px]">
-          <div class="relative tiles-container grid grid-cols-[repeat(17,minmax(0,1fr))] gap-4 overflow-hidden">
-            <template v-for="(tile, index) in baseTiles" :key="index">
-              <template v-if="tile.col === 0">
-                <div 
-                  class="flex justify-center items-center border border-4 border-black rounded-md font-bold text-black"
-                  :class="'bg-' + extraInfo[tile.row]?.color + '-300'"
-                >
-                  {{ extraInfo[tile.row]?.text}}
-                </div>
-                <div class="flex justify-center items-center border border-2 text-sm">
-                  
-                </div>
-              </template>
-              <div class="border-2 aspect-square relative" :class="tile.col === 8 ? 'red-line-after': ''" ></div>
-              <div v-if="tile.col === 13" class="border-2 finish-line bg-green-500"></div>
-            </template>
-      
-      
-            <!-- Pieces layer -->
-            <div class="absolute top-0 left-[calc(4.5%+1rem)] w-[calc(88%+1rem)] h-[calc(100%+1rem)] pointer-events-none"> 
-              <div
-                v-for="(horse, horseIndex) in horseData"
-                :key="horse.horseIndex"
-                class="piece absolute text-[1.75rem] transition-all duration-300"
-                :style="{
-                  top: `${horseIndex * (100 / 9) - .25}%`,
-                  left: `${horse.position * 6.67 + .4}%`
-                }"
-              >
-                <i :class="['fa-solid', 'fa-horse', `text-${extraInfo[horseIndex]?.color}-200`]"></i>
-                <span class="absolute z-10 left-1/3 -translate-x-1/2  text-sm font-bold text-black" style="top: 25%; text-shadow: 0 0 4px rgba(255, 255, 255, 0.8),0 0 8px rgba(255, 255, 255, 0.6);">
-                  {{ extraInfo[horseIndex]?.diceText}}
-                </span>
-              </div>
-            </div>
-          </div>
-      
-          <div class="p-4">
-    
-            <template v-if="winner && currentRound == totalRound">
-              <strong class="mr-4">
-                Game is over. {{ totalWinner?.name }} ({{ totalWinner?.balance }}点) won the entire game!
-              </strong>
-              <button
-                  @click="confirmNewRound"
-                  class="group flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600
-                        hover:from-green-600 hover:to-emerald-700
-                        text-white font-semibold px-5 py-2.5 rounded-xl
-                        shadow-lg hover:shadow-xl active:scale-95
-                        transition-all duration-200"
-              >
-                  <i class="fa-solid fa-play text-sm group-hover:translate-x-0.5 transition-transform"></i>
-                  <span class="whitespace-nowrap">Start New Game</span>
-              </button>
-    
-            </template>
-            <button
-                v-else-if="winner"
-                @click="startNewRound()"
-                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded mr-3 items-center gap-2"
-            >
-                <i class="fa-solid fa-play"></i>
-                Start New Round
-            </button>
-            <button
-                v-else-if="!autoInterval"
-                @click="startAuto"
-                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded mr-3 items-center gap-2"
-            >
-                <i class="fa-solid fa-play"></i>
-                Start
-            </button>
-    
-            <button
-                v-else
-                @click="stopAuto"
-                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded mr-3 items-center gap-2"
-                :disabled="!autoInterval"
-            >
-                <i class="fa-solid fa-stop"></i>
-                Stop
-            </button>
-    
-            <button v-if="!winner" @click="rollDice" class="bg-blue-500 text-white px-4 py-2 rounded">Roll Dice</button>
-    
-            <div>
-              <strong
-                  v-if="winner"
-                  class="block mt-4 px-6 py-4 rounded-xl
-                        bg-yellow-100 text-yellow-800 border border-yellow-300
-                        text-lg font-bold shadow-lg text-center"
-              >
-                  🏆 Winner: {{ extraInfo[winner.horseIndex]?.diceText }} 🏆
-              </strong>
-    
-              <strong
-                v-else-if="hasCrossedRedLine"
-                class="block mt-4 px-4 py-2 rounded-lg
-                      bg-red-50 text-red-700 border border-red-300
-                      text-sm font-semibold shadow-sm"
-              >
-                赤線を越えた馬が3頭出たため、ベット終了です。
-              </strong>
-            </div>
-            <p class="mt-4 text-3xl">
-              <strong>{{ currentRound }} / {{ totalRound }} Round</strong> - Result: <i :class="diceIcon(diceNum1)"></i> <i :class="diceIcon(diceNum2)"></i>
-            </p>
-          </div>
-        </div>
-      </template>
-    
-      <template v-if="currentDevice == 'mobile' || currentDevice == 'pc'">
-        <div class="main-mobile max-w-[414px]">
-          <div class="top-row">
-            <div class="relative tiles-container grid grid-cols-[repeat(5,minmax(0,1fr))] gap-2 overflow-hidden">
-              <template v-for="(order, index) in specialOrders" :key="index">
-                <div 
-                  class="bg-amber-700 border border-amber-200 aspect-[16/9] p-1 relative"
-                  @click="placeSpecialBet(order)"
-                  :class="{
-                    'cannotBet': !winner && (hasCrossedRedLine || order.placedBet),
-                    'blink-win': winner && order.isSuccess,
-                  }"
-                  >
-                  <div class="center">
-                    <div class="flex justify-between w-full text-sm">
-                      <div class="w-full text-center">
-                        <i :class="['fa-solid', 'fa-horse', `text-${extraInfo[order.behind]?.color}-200`]"></i>
-                        <div>
-                          <small>{{ extraInfo[order.behind].diceText }}</small>
-                        </div>
-                      </div>
-                      <div><strong>||</strong></div>
-                      <div class="w-full text-center">
-                        <i :class="['fa-solid', 'fa-horse', `text-${extraInfo[order.ahead]?.color}-200`]"></i>
-                        <div>
-                          <small>{{ extraInfo[order.ahead].diceText }}</small>
-                        </div>
-                      </div>
-                    </div>
-                    <hr>
-                    <div class="flex justify-between w-full text-sm px-1">
-                      <div>x<strong>{{ order.odds }}</strong></div>
-                      <div class="text-black">-<strong>{{ order.penalty }}</strong></div>
-                    </div>
-                  </div>
-    
-                  <div
-                    v-if="order?.placedBet"
-                    class="absolute bottom-1 left-7 w-6 aspect-square rounded-full text-xs text-black flex items-center justify-center"
-                    :class="order.color"
-                  >
-                    {{ order?.placedBet }}
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
-          <div class="middle-row">
-            <div class="relative grid grid-cols-[1fr_1fr_22.5px_1fr_1fr_22.5px_1fr_1fr_1fr] gap-1 items-center overflow-hidden mt-2">
-              <div class="border col-span-2 text-center">1–3着</div>
-              <div></div>
-              <div class="border col-span-2 text-center">1-2着</div>
-              <div></div>
-              <div class="border col-span-3 text-center">1着</div>
-              <template v-for="(info, index) in extraInfo" :key="index">
-                <template v-for="(bet, betIndex) in info.betList" :key="betIndex">
-                  <div 
-                    class="border aspect-square relative px-1 bg-green-700" 
-                    style="text-wrap: nowrap;"
-                    :class="{
-                      'cannotBet': !winner && (hasCrossedRedLine || bet.placedBet),
-                      'blink-win': winner && bet.isSuccess,
-                    }"
-
-                    @click="placeBet(myPlayerIndex, bet)"
-                    >
-                    <div class="w-[80%]">
-                      <strong class="text-lg block leading-none"><small>x</small>{{ bet.odds }}</strong>
-                      <small class="bg-red-500 leading-none px-1">-{{ bet.penalty }}</small>
-                    </div>
-                    <div
-                      v-if="bet.placedBet"
-                      class="absolute bottom-3 right-0 w-5 aspect-square rounded-full text-xs text-black flex items-center justify-center"
-                      :class="bet.color"
-                    >
-                      {{ bet.placedBet }}
-                    </div>
-    
-                  </div>
-                  <div 
-                    v-if="betIndex == 1 || betIndex == 3" 
-                    class="w-full text-center flex flex-col justify-around items-center gap-1"
-                    >
-                    <i :class="['fa-solid', 'fa-horse', `text-${info.color}-200`]"></i>
-                    <div class="leading-none"><small>{{ info.diceText }}</small></div>
-                  </div>
-                </template>
-              </template>
-            </div>
-          </div>
-          <div class="bottom-row">
-            <div class="relative grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-2 items-center overflow-hidden mt-2">
-              <div class="col-span-2">
-                <div class="grid grid-cols-[1fr_1fr_1fr] gap-1 w-[80%]">
-                  <template v-for="(bet, betIndex) in myPlayer?.bets" :key="betIndex">
-                      <div 
-                          class="w-7 aspect-square flex items-center justify-center rounded-full text-black font-bold shadow-md m-1"
-                          :class="[
-                              myPlayer.coinColor,
-                              selectedBetIndex === betIndex ? 'brightness-100' : 'brightness-50'
-                          ]"
-                          @click="this.selectedBetIndex = this.selectedBetIndex === betIndex ? null : betIndex"
-                      >
-                          {{ bet }}
-                      </div>
-                  </template>
-                </div>
-    
-              </div>
-              <template v-for="(bet, index) in topBets" :key="index">
-                <div 
-                  class="text-center whitespace-nowrap relative" 
-                  @click="placeSpecialBet(bet)"
-                  >
-                  <small>{{ bet.name }}</small>
-                  <div 
-                    :class="[
-                        bet.bgColor,
-                        { cannotBet: !winner && (hasCrossedRedLine || bet.placedBet) },
-                        { 'blink-win': winner && bet.isSuccess},
-                    ]"
-
-                    class="border aspect-square relative text-black bold text-left p-1 "
-                    >
-                    <strong class="text-3xl" :class="index == 3 ? 'text-white' : ''"><small>x</small>{{ bet.odds }}</strong>
-                    <div class="absolute w-1/3 h-1/3 bottom-0 right-0 bg-red-500 text-center" v-if="bet.penalty > 0">
-                      <small>-{{ bet.penalty }}</small>
-                    </div>
-                  </div>
-                    <div
-                        v-if="bet?.placedBet"
-                        class="absolute bottom-1 left-2 w-6 aspect-square rounded-full text-xs text-black flex items-center justify-center"
-                        :class="bet.color"
-                      >
-                        {{ bet?.placedBet }}
-                    </div>
-                </div>
-              </template>
-            </div>
-          </div>
-          <div class="players-row">
-            <div class="relative tiles-container grid grid-cols-[repeat(4,minmax(0,1fr))] gap-3  mt-2">
-              <template v-for="(player, playerIndex) in players" :key="playerIndex">
-                <div class="playerInfo" :id="'player-'+player.name" >
-                  <div class="player-box" :class="player.name == username ? 'border-2 border-yellow-400 shadow-[0_0_10px_rgba(255,215,0,0.7)]' : 'border border-gray-300'">
-                      <div class="name-container text-black py-1" :class="player.coinColor">
-                          <p>{{ player.name }}</p>
-                      </div>
-                      <div class="player-image-container relative">
-                          <div class="temp-image">
-                              <div v-html="regenerate(player.randomString)"></div>
-                          </div>
-                          <template v-if="winner">
-                            <div class="absolute top-0 left-0 w-full h-full flex flex-col justify-center items-center bg-black bg-opacity-50 text-white text-center p-2 text-2xl font-bold">
-                              <strong :class="diffClass(player)">
-                                {{ player.balanceArr[player.balanceArr.length - 1] - player.balanceArr[player.balanceArr.length - 2] }}
-                              </strong>
-                            </div>
-                          </template>
-                      </div>
-                  </div>
-                  <div class="w-full border text-black" :class="player.coinColor">
-                    <div class="flex justify-between px-2" style="text-wrap: nowrap;">
-                      <span style="font-size: 0.75rem;">{{ player.balance }}P</span>
-                      <span style="font-size: 0.75rem;">残{{ player.bets.length }}</span>
-                    </div>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
-        </div>
-      </template>
     </div>
 
+    <div v-if="currentPage === 'game'">
+      <div :class="currentDevice !== 'mobile'
+        ? 'grid grid-cols-[70%_30%] gap-2 justify-center'
+        : ''">
+        <template v-if="currentDevice == 'tablet' || currentDevice == 'pc'">
+          <div class="main-tablet max-w-[1000px]">
+            <div class="relative tiles-container grid grid-cols-[repeat(17,minmax(0,1fr))] gap-3 overflow-hidden">
+              <template v-for="(tile, index) in baseTiles" :key="index">
+                <template v-if="tile.col === 0">
+                  <div 
+                    class="flex justify-center items-center border border-4 border-black rounded-md font-bold text-black"
+                    :class="'bg-' + extraInfo[tile.row]?.color + '-300'"
+                  >
+                    {{ extraInfo[tile.row]?.text}}
+                  </div>
+                  <div class="flex justify-center items-center border border-2 text-sm" :class="previousHorsePosition?.position == 0 && previousHorsePosition?.index == tile.row ? 'bg-yellow-400' : ''"></div>
+                </template>
+                <div class="border-2 aspect-square relative" :class="tile.col === 8 ? 'red-line-after': ''" >
+<div :class="previousHorsePosition?.position == tile.col +1 && previousHorsePosition?.index == tile.row ? 'bg-yellow-400' : ''" class="w-full aspect-square"></div>
+                </div>
+                <div v-if="tile.col === 13" class="border-2 finish-line bg-green-500"></div>
+              </template>
+        
+        
+              <!-- Pieces layer -->
+              <div class="absolute top-0 left-[calc(4.5%+1rem)] w-[calc(88%+1rem)] h-[calc(100%+1rem)] pointer-events-none"> 
+                <div
+                  v-for="(horse, horseIndex) in horseData"
+                  :key="horse.horseIndex"
+                  class="piece absolute text-[1.3rem] transition-all duration-300"
+                  :style="{
+                    top: `${horseIndex * (100 / 9) - .25}%`,
+                    left: `${horse.position * 6.67 - .3}%`
+                  }"
+                >
+                  <i :class="['fa-solid', 'fa-horse', `text-${extraInfo[horseIndex]?.color}-200`]"></i>
+                  <span class="absolute z-10 left-1/3 -translate-x-1/2  text-sm font-bold text-black" style="top: 25%; text-shadow: 0 0 4px rgba(255, 255, 255, 0.8),0 0 8px rgba(255, 255, 255, 0.6);">
+                    {{ extraInfo[horseIndex]?.diceText}}
+                  </span>
+                </div>
+              </div>
+            </div>
+        
+            <div class="p-4">
+      
+              <template v-if="winner && currentRound == totalRound">
+                <strong class="mr-4">
+                  Game is over. {{ totalWinner?.name }} ({{ totalWinner?.balance }}点) won the entire game!
+                </strong>
+                <button
+                    @click="confirmNewRound"
+                    class="group flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600
+                          hover:from-green-600 hover:to-emerald-700
+                          text-white font-semibold px-5 py-2.5 rounded-xl
+                          shadow-lg hover:shadow-xl active:scale-95
+                          transition-all duration-200"
+                >
+                    <i class="fa-solid fa-play text-sm group-hover:translate-x-0.5 transition-transform"></i>
+                    <span class="whitespace-nowrap">Start New Game</span>
+                </button>
+      
+              </template>
+              <button
+                  v-else-if="winner"
+                  @click="startNewRound()"
+                  class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded mr-3 items-center gap-2"
+              >
+                  <i class="fa-solid fa-play"></i>
+                  Start New Round
+              </button>
+              <button
+                  v-else-if="!autoInterval"
+                  @click="startAuto"
+                  class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded mr-3 items-center gap-2"
+              >
+                  <i class="fa-solid fa-play"></i>
+                  Start
+              </button>
+      
+              <button
+                  v-else
+                  @click="stopAuto"
+                  class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded mr-3 items-center gap-2"
+                  :disabled="!autoInterval"
+              >
+                  <i class="fa-solid fa-stop"></i>
+                  Stop
+              </button>
+      
+              <button v-if="!winner" @click="rollDice" class="bg-blue-500 text-white px-4 py-2 rounded">Roll Dice</button>
+      
+              <div>
+                <strong
+                    v-if="winner"
+                    class="block mt-4 px-6 py-4 rounded-xl
+                          bg-yellow-100 text-yellow-800 border border-yellow-300
+                          text-lg font-bold shadow-lg text-center"
+                >
+                    🏆 Winner: {{ extraInfo[winner.horseIndex]?.diceText }} 🏆
+                </strong>
+      
+                <strong
+                  v-else-if="hasCrossedRedLine"
+                  class="block mt-4 px-4 py-2 rounded-lg
+                        bg-red-50 text-red-700 border border-red-300
+                        text-sm font-semibold shadow-sm"
+                >
+                  赤線を越えた馬が3頭出たため、ベット終了です。
+                </strong>
+              </div>
+              <p class="mt-4 text-3xl">
+                <strong>{{ currentRound }} / {{ totalRound }} Round</strong> - Result: <i :class="diceIcon(diceNum1)"></i> <i :class="diceIcon(diceNum2)"></i>
+              </p>
+            </div>
+          </div>
+        </template>
+      
+        <template v-if="currentDevice == 'mobile' || currentDevice == 'pc'">
+          <div class="main-mobile max-w-[414px]">
+            <div class="top-row">
+              <div class="relative tiles-container grid grid-cols-[repeat(5,minmax(0,1fr))] gap-2 overflow-hidden">
+                <template v-for="(order, index) in specialOrders" :key="index">
+                  <div 
+                    class="bg-amber-700 border border-amber-200 aspect-[16/9] p-1 relative"
+                    @click="placeSpecialBet(order)"
+                    :class="{
+                      'cannotBet': !winner && (hasCrossedRedLine || order.placedBet),
+                      'blink-win': winner && order.isSuccess,
+                    }"
+                    >
+                    <div class="center">
+                      <div class="flex justify-between w-full text-sm">
+                        <div class="w-full text-center">
+                          <i :class="['fa-solid', 'fa-horse', `text-${extraInfo[order.behind]?.color}-200`]"></i>
+                          <div>
+                            <small>{{ extraInfo[order.behind].diceText }}</small>
+                          </div>
+                        </div>
+                        <div><strong>||</strong></div>
+                        <div class="w-full text-center">
+                          <i :class="['fa-solid', 'fa-horse', `text-${extraInfo[order.ahead]?.color}-200`]"></i>
+                          <div>
+                            <small>{{ extraInfo[order.ahead].diceText }}</small>
+                          </div>
+                        </div>
+                      </div>
+                      <hr>
+                      <div class="flex justify-between w-full text-sm px-1">
+                        <div>x<strong>{{ order.odds }}</strong></div>
+                        <div class="text-black">-<strong>{{ order.penalty }}</strong></div>
+                      </div>
+                    </div>
+      
+                    <div
+                      v-if="order?.placedBet"
+                      class="absolute bottom-1 left-7 w-6 aspect-square rounded-full text-xs text-black flex items-center justify-center"
+                      :class="order.color"
+                    >
+                      {{ order?.placedBet }}
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <div class="middle-row">
+              <div class="relative grid grid-cols-[1fr_1fr_22.5px_1fr_1fr_22.5px_1fr_1fr_1fr] gap-1 items-center overflow-hidden mt-2">
+                <div class="border col-span-2 text-center">1–3着</div>
+                <div></div>
+                <div class="border col-span-2 text-center">1-2着</div>
+                <div></div>
+                <div class="border col-span-3 text-center">1着</div>
+                <template v-for="(info, index) in extraInfo" :key="index">
+                  <template v-for="(bet, betIndex) in info.betList" :key="betIndex">
+                    <div 
+                      class="border aspect-square relative px-1 bg-green-700" 
+                      style="text-wrap: nowrap;"
+                      :class="{
+                        'cannotBet': !winner && (hasCrossedRedLine || bet.placedBet),
+                        'blink-win': winner && bet.isSuccess,
+                      }"
+  
+                      @click="placeBet(myPlayerIndex, bet)"
+                      >
+                      <div class="w-[80%]">
+                        <strong class="text-lg block leading-none"><small>x</small>{{ bet.odds }}</strong>
+                        <small class="bg-red-500 leading-none px-1">-{{ bet.penalty }}</small>
+                      </div>
+                      <div
+                        v-if="bet.placedBet"
+                        class="absolute bottom-3 right-0 w-5 aspect-square rounded-full text-xs text-black flex items-center justify-center"
+                        :class="bet.color"
+                      >
+                        {{ bet.placedBet }}
+                      </div>
+      
+                    </div>
+                    <div 
+                      v-if="betIndex == 1 || betIndex == 3" 
+                      class="w-full text-center flex flex-col justify-around items-center gap-1"
+                      >
+                      <i :class="['fa-solid', 'fa-horse', `text-${info.color}-200`]"></i>
+                      <div class="leading-none"><small>{{ info.diceText }}</small></div>
+                    </div>
+                  </template>
+                </template>
+              </div>
+            </div>
+            <div class="bottom-row">
+              <div class="relative grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-2 items-center overflow-hidden mt-2">
+                <div class="col-span-2">
+                  <div class="grid grid-cols-[1fr_1fr_1fr] gap-1 w-[80%]">
+                    <template v-for="(bet, betIndex) in myPlayer?.bets" :key="betIndex">
+                        <div 
+                            class="w-7 aspect-square flex items-center justify-center rounded-full text-black font-bold shadow-md m-1"
+                            :class="[
+                                myPlayer.coinColor,
+                                selectedBetIndex === betIndex ? 'brightness-100' : 'brightness-50'
+                            ]"
+                            @click="this.selectedBetIndex = this.selectedBetIndex === betIndex ? null : betIndex"
+                        >
+                            {{ bet }}
+                        </div>
+                    </template>
+                  </div>
+      
+                </div>
+                <template v-for="(bet, index) in topBets" :key="index">
+                  <div 
+                    class="text-center whitespace-nowrap relative" 
+                    @click="placeSpecialBet(bet)"
+                    >
+                    <small>{{ bet.name }}</small>
+                    <div 
+                      :class="[
+                          bet.bgColor,
+                          { cannotBet: !winner && (hasCrossedRedLine || bet.placedBet) },
+                          { 'blink-win': winner && bet.isSuccess},
+                      ]"
+  
+                      class="border aspect-square relative text-black bold text-left p-1 "
+                      >
+                      <strong class="text-3xl" :class="index == 3 ? 'text-white' : ''"><small>x</small>{{ bet.odds }}</strong>
+                      <div class="absolute w-1/3 h-1/3 bottom-0 right-0 bg-red-500 text-center" v-if="bet.penalty > 0">
+                        <small>-{{ bet.penalty }}</small>
+                      </div>
+                    </div>
+                      <div
+                          v-if="bet?.placedBet"
+                          class="absolute bottom-1 left-2 w-6 aspect-square rounded-full text-xs text-black flex items-center justify-center"
+                          :class="bet.color"
+                        >
+                          {{ bet?.placedBet }}
+                      </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <div class="players-row">
+              <div class="relative tiles-container grid grid-cols-[repeat(4,minmax(0,1fr))] gap-3  mt-2">
+                <template v-for="(player, playerIndex) in players" :key="playerIndex">
+                  <div class="playerInfo" :id="'player-'+player.name" >
+                    <div class="player-box" :class="player.name == username ? 'border-2 border-yellow-400 shadow-[0_0_10px_rgba(255,215,0,0.7)]' : 'border border-gray-300'">
+                        <div class="name-container text-black py-1" :class="player.coinColor">
+                            <p>{{ player.name }}</p>
+                        </div>
+                        <div class="player-image-container relative">
+                            <div class="temp-image">
+                                <div v-html="regenerate(player.randomString)"></div>
+                            </div>
+                            <template v-if="winner">
+                              <div class="absolute top-0 left-0 w-full h-full flex flex-col justify-center items-center bg-black bg-opacity-50 text-white text-center p-2 text-2xl font-bold">
+                                <strong :class="diffClass(player)">
+                                  {{ player.balanceArr[player.balanceArr.length - 1] - player.balanceArr[player.balanceArr.length - 2] }}
+                                </strong>
+                              </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="w-full border text-black" :class="player.coinColor">
+                      <div class="flex justify-between px-2" style="text-wrap: nowrap;">
+                        <span style="font-size: 0.75rem;">{{ player.balance }}P</span>
+                        <span style="font-size: 0.75rem;">残{{ player.bets.length }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
     
   </div>
   
@@ -385,7 +389,7 @@
         hasCrossedRedLine: false,
         winner: null,
 
-        currentDevice: '',
+        currentDevice: 'pc',
 
         players:[],
         autoInterval: null,
@@ -426,6 +430,8 @@
         developingMode: false,
 
         frequency: 2500,
+
+        previousHorsePosition: null,
       }
       
     },
@@ -434,11 +440,7 @@
 
       const width = window.innerWidth
 
-      if (width >= 1024) {
-          this.currentDevice = 'pc'
-      } else if (width >= 768) {
-          this.currentDevice = 'tablet'
-      } else {
+      if (width <= 768) {
           this.currentDevice = 'mobile'
       }
 
@@ -448,9 +450,10 @@
       this.username = this.getRandomName();
 
 
-      // this.developingMode = true;
+      this.developingMode = true;
+      this.developingMode = false;
       if(this.developingMode){
-        this.frequency = 25
+        this.frequency = 2000;
       }
 
 
@@ -546,6 +549,8 @@
         const matchedHorse = this.horseData.find(horse =>
           horse.occurance.includes(this.diceSum)
         );
+
+        this.previousHorsePosition = {index: matchedHorse.horseIndex, position: matchedHorse.position};
 
         matchedHorse.position += 1;
 
@@ -836,6 +841,8 @@
         this.winner = null;
         this.hasCrossedRedLine = false;
 
+        this.previousHorsePosition = null;
+
         this.horseData = this.initHorseData();
 
         this.extraInfo.forEach((info) => {
@@ -885,7 +892,7 @@
       },
       retriveCode(){
         this.tempRoomcode = localStorage.getItem('latestRoomCode') || 'No room code found'
-        if(this.devSkip) this.joinARoom()
+        if(this.developingMode) this.joinARoom()
       },
       async createARoom() {
         if (this.roomCode) return;
@@ -1050,6 +1057,29 @@
             await docRef.update({
               players: this.players,
             });
+            this.reciveTheData();
+          } else {
+            console.log('No such document!');
+          }
+        } catch (error) {
+          console.log('Error getting document:', error);
+        }
+      },
+      async monitorGame() {
+
+        const docRef = db.collection(this.firebaseRoomName).doc(`${this.tempRoomcode}`);
+
+        try {
+          const doc = await docRef.get();
+          if (doc.exists) {
+            // if(doc.data().onlineStatus == 'playing') return alert('This room is closed.')
+
+            this.players = doc.data().players;
+            this.onlineStatus = doc.data().players;
+
+            this.roomCode = this.tempRoomcode
+            this.currentDevice = 'pc'
+
             this.reciveTheData();
           } else {
             console.log('No such document!');
