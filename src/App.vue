@@ -97,7 +97,7 @@
                 <div
                   v-for="(horse, horseIndex) in horseData"
                   :key="horse.horseIndex"
-                  class="piece absolute text-[2rem] transition-all duration-300"
+                  class="piece absolute text-[1.8rem] transition-all duration-300"
                   :style="{
                     top: `${horseIndex * (100 / 9) - .5}%`,
                     left: `${horse.position * 6.67 - .3}%`
@@ -433,6 +433,11 @@
         frequency: 2500,
 
         previousHorsePosition: null,
+
+        audioEnabled: true,
+        audio1: null,
+        audio2: null,
+        toggleSound: false,
       }
       
     },
@@ -456,6 +461,22 @@
       if(this.developingMode){
         this.frequency = 2000;
       }
+
+      // Create the audio objects
+      // this.audio1 = new Audio('/audio1.mp3')
+      // this.audio2 = new Audio('/audio2.mp3')
+
+      // this.audio1.volume = 0.5
+      // this.audio2.volume = 0.5
+
+      // // Safari/iOS requires a user interaction first
+      // // So we wait for the first click to unlock the audio
+      // const unlockAudio = () => {
+      //     // Play a tiny silent sound to unlock
+      //     this.moveAudio1.play().catch(() => {})
+      //     window.removeEventListener('click', unlockAudio)
+      // }
+      // window.addEventListener('click', unlockAudio)
 
 
 
@@ -547,6 +568,8 @@
         this.diceNum2 = Math.floor(Math.random() * 6) + 1;
         this.diceSum = this.diceNum1+this.diceNum2;
 
+        this.playSound('dice');
+
         const matchedHorse = this.horseData.find(horse =>
           horse.occurance.includes(this.diceSum)
         );
@@ -556,6 +579,7 @@
         matchedHorse.position += 1;
 
         if(matchedHorse.occurance == this.previousOccurance){
+          this.playSound('boost');
           matchedHorse.position += matchedHorse.boost;
         }
 
@@ -567,10 +591,12 @@
         }
 
         if(redLineCount == 3 && !this.hasCrossedRedLine){
+          this.playSound('redline');
           this.hasCrossedRedLine = true;
         }
 
         if(matchedHorse.position >= 15){
+          this.playSound('winner');
           matchedHorse.position = 15;
           this.winner = matchedHorse
           this.calculateScores()
@@ -611,6 +637,7 @@
           targetBet.color = player.coinColor;
           targetBet.playerIndex = playerIndex;
 
+          this.playSound('coin');
           this.updateBetsAndScore();
       },
       placeSpecialBet(targetBet) {
@@ -635,6 +662,7 @@
         targetBet.color = this.myPlayer.coinColor;
         targetBet.playerIndex = this.myPlayerIndex;
 
+        this.playSound('coin');
         this.updateBetsAndScore();
       },
 
@@ -667,9 +695,14 @@
               }
           })
       },
-      startAuto() {
+      async startAuto() {
           // prevent double start
           if (this.autoInterval) return
+          this.playSound('start');
+          this.autoInterval = true;
+
+          await new Promise(resolve => setTimeout(resolve, 4500));
+
           this.rollDice()
 
           // const frequency = 250
@@ -1244,7 +1277,48 @@
         if(number == 0 || !number) return "";
         if(number >= 0) return "+"
         else return "-"
-      }
+      },
+
+      playSound(type) {
+
+          if (!this.audioEnabled) return
+
+          let src
+
+          if(type == 'coin'){
+            src = this.toggleSound ? '/audio/coin1.mp3' : '/audio/coin2.mp3'
+          }
+
+          if(type == 'boost'){
+            src = this.toggleSound ? '/audio/boost1.mp3' : '/audio/boost2.mp3'
+          }
+
+          if(type == 'dice'){
+            src = this.toggleSound ? '/audio/diceRolling1.mp3' : '/audio/diceRolling2.mp3'
+          }
+
+          if(type == 'start'){
+            src = '/audio/raceStart.mp3'
+          }
+
+          if(type == 'redline'){
+            src = '/audio/redline.mp3'
+          }
+
+          if(type == 'winner'){
+            src = '/audio/winner.mp3'
+          }
+
+          // Alternate between the two audio sources
+          // const src = this.toggleSound ? '/move1.mp3' : '/move2.mp3'
+
+          const sound = new Audio(src)
+          sound.volume = 0.5
+          sound.play().catch(() => {})
+
+          this.toggleSound = !this.toggleSound
+      },
+
       
     },
     computed: {
